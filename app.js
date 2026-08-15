@@ -9,6 +9,68 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Aluniverse is ready.");
     console.log("Version:", app.version);
 
+    window.openTool = function (tool) {
+
+        const toolNames = {
+            ai: "هوش مصنوعی",
+            image: "تولید تصویر",
+            video: "ویدئو و انیمیشن",
+            content: "تولید محتوا",
+            web: "طراحی وب",
+            execute: "از ایده تا اجرا"
+        };
+
+        const toolName = toolNames[tool] || "ابزار Aluniverse";
+
+        let page = document.getElementById("tool-page");
+
+        if (!page) {
+            page = document.createElement("section");
+            page.id = "tool-page";
+            page.className = "section";
+            document.querySelector("main").appendChild(page);
+        }
+
+        page.innerHTML = `
+            <h2>${toolName}</h2>
+            <p>ابزار ${toolName} در Aluniverse آماده استفاده است.</p>
+            <button id="back-home" style="
+                margin-top:20px;
+                padding:12px 25px;
+                border:none;
+                border-radius:25px;
+                background:#5b35d5;
+                color:white;
+                font-size:16px;
+                cursor:pointer;
+            ">بازگشت</button>
+        `;
+
+        document.querySelectorAll(".hero, .features, .section").forEach(function (section) {
+            section.style.display = "none";
+        });
+
+        page.style.display = "block";
+
+        document.getElementById("back-home").addEventListener("click", function () {
+            document.querySelectorAll(".hero, .features, .section").forEach(function (section) {
+                section.style.display = "";
+            });
+
+            page.style.display = "none";
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        });
+
+        page.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    };
+
     const buttons = document.querySelectorAll(
         "button, [role='button'], .icon, .icon-card, .tool-card, .feature-card"
     );
@@ -21,7 +83,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 button.dataset.action ||
                 button.dataset.target ||
                 button.dataset.page ||
-                button.getAttribute("onclick") ||
                 "";
 
             console.log("Aluniverse action:", action);
