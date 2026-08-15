@@ -35,20 +35,18 @@ document.addEventListener("DOMContentLoaded", function () {
             const targetId = button.dataset.target;
 
             if (targetId) {
+
                 const target = document.getElementById(
                     targetId.replace("#", "")
                 );
 
                 if (target) {
+
                     event.preventDefault();
 
                     document.querySelectorAll(
-                        
-     
-                    
                         ".page, .section, .panel, .tool-page, .tool.page"
-                        .forEach(function (section) 
-                              
+                    ).forEach(function (section) {
                         section.style.display = "none";
                     });
 
