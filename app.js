@@ -2,13 +2,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const app = {
         name: "Aluniverse",
-        version: "1.1.0",
+        version: "1.2.0",
         status: "ready"
     };
 
     console.log("Aluniverse is ready.");
     console.log("Version:", app.version);
-
 
     const tools = {
 
@@ -56,7 +55,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     };
 
-
     const homeHero = document.getElementById("home-hero");
     const features = document.getElementById("features");
     const aboutSection = document.getElementById("about-section");
@@ -68,10 +66,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const backHome = document.getElementById("back-home");
 
+    if (!homeHero || !features || !aboutSection ||
+        !toolPage || !toolIcon || !toolTitle ||
+        !toolDescription || !backHome) {
 
-    /*
-     * ساخت محیط کاری ابزار
-     */
+        console.error("Aluniverse: Required HTML elements were not found.");
+        return;
+    }
 
     let toolWorkspace = document.getElementById("tool-workspace");
 
@@ -89,11 +90,6 @@ document.addEventListener("DOMContentLoaded", function () {
         toolPage.appendChild(toolWorkspace);
     }
 
-
-    /*
-     * باز کردن ابزار
-     */
-
     window.openTool = function (tool) {
 
         console.log("Opening tool:", tool);
@@ -101,62 +97,86 @@ document.addEventListener("DOMContentLoaded", function () {
         const selectedTool = tools[tool];
 
         if (!selectedTool) {
-
             console.error("Unknown Aluniverse tool:", tool);
-
             return;
         }
 
-
         toolIcon.textContent = selectedTool.icon;
-
         toolTitle.textContent = selectedTool.title;
-
-        toolDescription.textContent =
-            selectedTool.description;
-
+        toolDescription.textContent = selectedTool.description;
 
         homeHero.style.display = "none";
-
         features.style.display = "none";
-
         aboutSection.style.display = "none";
-
         toolPage.style.display = "block";
 
-
         createToolInterface(tool);
-
 
         window.scrollTo({
             top: 0,
             behavior: "smooth"
         });
-
     };
-
-
-    /*
-     * ساخت رابط اختصاصی هر ابزار
-     */
 
     function createToolInterface(tool) {
 
         toolWorkspace.innerHTML = "";
 
+        if (tool === "ai") {
 
-        /*
-         * ابزار تولید تصویر
-         */
+            const title = document.createElement("h3");
+            title.textContent = "دستیار هوش مصنوعی";
+
+            const textarea = document.createElement("textarea");
+            textarea.placeholder = "سؤال یا درخواست خود را بنویسید...";
+            textarea.style.width = "100%";
+            textarea.style.minHeight = "130px";
+            textarea.style.padding = "15px";
+            textarea.style.marginTop = "15px";
+            textarea.style.borderRadius = "15px";
+            textarea.style.border = "1px solid #ccc";
+            textarea.style.fontSize = "16px";
+            textarea.style.direction = "rtl";
+
+            const button = document.createElement("button");
+            button.textContent = "🤖 ارسال درخواست";
+            button.style.marginTop = "15px";
+            button.style.padding = "14px 30px";
+            button.style.border = "none";
+            button.style.borderRadius = "30px";
+            button.style.background = "#5b2ed6";
+            button.style.color = "white";
+            button.style.fontSize = "17px";
+            button.style.cursor = "pointer";
+
+            const result = document.createElement("div");
+            result.style.marginTop = "25px";
+
+            button.addEventListener("click", function () {
+
+                const text = textarea.value.trim();
+
+                if (!text) {
+                    result.innerHTML = "<p>لطفاً درخواست خود را وارد کنید.</p>";
+                    return;
+                }
+
+                result.innerHTML =
+                    "<p>درخواست شما دریافت شد و محیط هوش مصنوعی آماده اتصال به موتور اصلی است.</p>";
+            });
+
+            toolWorkspace.appendChild(title);
+            toolWorkspace.appendChild(textarea);
+            toolWorkspace.appendChild(button);
+            toolWorkspace.appendChild(result);
+
+            return;
+        }
 
         if (tool === "image") {
 
             const title = document.createElement("h3");
-
             title.textContent = "ایده تصویر خود را بنویسید";
-
-            title.style.marginBottom = "15px";
-
 
             const textarea = document.createElement("textarea");
 
@@ -168,12 +188,12 @@ document.addEventListener("DOMContentLoaded", function () {
             textarea.style.width = "100%";
             textarea.style.minHeight = "130px";
             textarea.style.padding = "15px";
+            textarea.style.marginTop = "15px";
             textarea.style.borderRadius = "15px";
             textarea.style.border = "1px solid #ccc";
             textarea.style.fontSize = "16px";
             textarea.style.resize = "vertical";
             textarea.style.direction = "rtl";
-
 
             const generateButton = document.createElement("button");
 
@@ -188,53 +208,37 @@ document.addEventListener("DOMContentLoaded", function () {
             generateButton.style.fontSize = "17px";
             generateButton.style.cursor = "pointer";
 
-
             const result = document.createElement("div");
 
-            result.id = "image-result";
-
             result.style.marginTop = "25px";
-
 
             generateButton.addEventListener("click", function () {
 
                 const prompt = textarea.value.trim();
 
-
                 if (!prompt) {
-
                     result.innerHTML =
                         "<p>لطفاً ابتدا ایده تصویر را وارد کنید.</p>";
-
                     return;
                 }
 
-
                 result.innerHTML =
                     "<p>⏳ در حال تولید تصویر...</p>";
-
-
-                /*
-                 * تولید تصویر
-                 */
 
                 const imageUrl =
                     "https://image.pollinations.ai/prompt/" +
                     encodeURIComponent(prompt) +
                     "?width=1024&height=1024&nologo=true";
 
-
                 const image = document.createElement("img");
 
                 image.src = imageUrl;
-
                 image.alt = prompt;
 
                 image.style.width = "100%";
                 image.style.maxWidth = "600px";
                 image.style.borderRadius = "20px";
                 image.style.marginTop = "15px";
-
 
                 image.onload = function () {
 
@@ -244,7 +248,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     result.appendChild(image);
                 };
 
-
                 image.onerror = function () {
 
                     result.innerHTML =
@@ -253,22 +256,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
             });
 
-
             toolWorkspace.appendChild(title);
-
             toolWorkspace.appendChild(textarea);
-
             toolWorkspace.appendChild(generateButton);
-
             toolWorkspace.appendChild(result);
 
             return;
         }
-
-
-        /*
-         * ابزارهای دیگر
-         */
 
         const message = document.createElement("div");
 
@@ -277,78 +271,73 @@ document.addEventListener("DOMContentLoaded", function () {
         message.style.background = "#f3efff";
         message.style.marginTop = "20px";
 
-
         const messageTitle = document.createElement("h3");
 
         messageTitle.textContent =
-            "محیط کاری " + tools[tool].title;
-
+            "محیط کاری " + selectedToolTitle(tool);
 
         const messageText = document.createElement("p");
 
         messageText.textContent =
-            "این ابزار در حال آماده‌سازی محیط عملیاتی خود است.";
-
+            "این ابزار با موفقیت باز شد و محیط عملیاتی آن در حال آماده‌سازی است.";
 
         messageText.style.marginTop = "10px";
 
-
         message.appendChild(messageTitle);
-
         message.appendChild(messageText);
 
         toolWorkspace.appendChild(message);
-
     }
 
+    function selectedToolTitle(tool) {
+        return tools[tool] ? tools[tool].title : "ابزار";
+    }
 
-    /*
-     * کلیک روی کارت‌های ابزار
-     */
+    document.querySelectorAll(".card[data-tool]").forEach(function (card) {
 
-    document.querySelectorAll(".card[data-tool]")
-        .forEach(function (card) {
+        card.addEventListener("click", function (event) {
 
-            card.addEventListener("click", function () {
+            event.preventDefault();
+            event.stopPropagation();
 
-                const tool = card.dataset.tool;
+            const tool = card.getAttribute("data-tool");
 
-                openTool(tool);
-
-            });
-
+            openTool(tool);
         });
 
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
 
-    /*
-     * بازگشت به صفحه اصلی
-     */
+        card.addEventListener("keydown", function (event) {
 
-    backHome.addEventListener("click", function () {
+            if (event.key === "Enter" || event.key === " ") {
+
+                event.preventDefault();
+
+                const tool = card.getAttribute("data-tool");
+
+                openTool(tool);
+            }
+        });
+    });
+
+    backHome.addEventListener("click", function (event) {
+
+        event.preventDefault();
 
         toolPage.style.display = "none";
 
         homeHero.style.display = "";
-
         features.style.display = "";
-
         aboutSection.style.display = "";
 
-
         toolWorkspace.innerHTML = "";
-
 
         window.scrollTo({
             top: 0,
             behavior: "smooth"
         });
-
     });
-
-
-    /*
-     * دسترسی عمومی Aluniverse
-     */
 
     window.Aluniverse = app;
 
