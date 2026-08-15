@@ -43,8 +43,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     event.preventDefault();
 
                     document.querySelectorAll(
-                        ".page, .section, .panel, .tool-page"
-                    ).forEach(function (section) {
+                        
+     
+                    
+                        ".page, .section, .panel, .tool-page, .tool.page"
+                        .forEach(function (section) 
+                              
                         section.style.display = "none";
                     });
 
