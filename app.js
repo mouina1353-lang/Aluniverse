@@ -9,160 +9,136 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Aluniverse is ready.");
     console.log("Version:", app.version);
 
-    window.openTool = function (tool) {
 
-        const toolNames = {
-            ai: "هوش مصنوعی",
-            image: "تولید تصویر",
-            video: "ویدئو و انیمیشن",
-            content: "تولید محتوا",
-            web: "طراحی وب",
-            execute: "از ایده تا اجرا"
-        };
+    const tools = {
 
-        const toolName = toolNames[tool] || "ابزار Aluniverse";
+        ai: {
+            icon: "🤖",
+            title: "هوش مصنوعی",
+            description:
+                "ابزارهای هوشمند Aluniverse برای پاسخ‌گویی، تحلیل، حل مسئله و انجام پروژه‌های مختلف."
+        },
 
-        let page = document.getElementById("tool-page");
+        image: {
+            icon: "🎨",
+            title: "تولید تصویر",
+            description:
+                "ایجاد تصاویر خلاقانه و حرفه‌ای با کمک هوش مصنوعی برای ایده‌ها و پروژه‌های شما."
+        },
 
-        if (!page) {
-            page = document.createElement("section");
-            page.id = "tool-page";
-            page.className = "section";
-            document.querySelector("main").appendChild(page);
+        video: {
+            icon: "🎬",
+            title: "ویدئو و انیمیشن",
+            description:
+                "ساخت ویدئو، انیمیشن و محتوای تصویری برای پروژه‌ها، آموزش و تبلیغات."
+        },
+
+        content: {
+            icon: "✍️",
+            title: "تولید محتوا",
+            description:
+                "تولید مقاله، کتاب، متن تبلیغاتی، محتوای شبکه‌های اجتماعی و محتوای حرفه‌ای."
+        },
+
+        web: {
+            icon: "🌐",
+            title: "طراحی وب",
+            description:
+                "طراحی و توسعه وب‌سایت‌ها و پروژه‌های دیجیتال با کمک ابزارهای هوشمند."
+        },
+
+        execute: {
+            icon: "🚀",
+            title: "از ایده تا اجرا",
+            description:
+                "هدایت مرحله‌به‌مرحله پروژه از ایده اولیه تا برنامه‌ریزی، ساخت و اجرای نهایی."
         }
 
-        page.innerHTML = `
-            <h2>${toolName}</h2>
-            <p>ابزار ${toolName} در Aluniverse آماده استفاده است.</p>
-            <button id="back-home" style="
-                margin-top:20px;
-                padding:12px 25px;
-                border:none;
-                border-radius:25px;
-                background:#5b35d5;
-                color:white;
-                font-size:16px;
-                cursor:pointer;
-            ">بازگشت</button>
-        `;
-
-        document.querySelectorAll(".hero, .features, .section").forEach(function (section) {
-            section.style.display = "none";
-        });
-
-        page.style.display = "block";
-
-        document.getElementById("back-home").addEventListener("click", function () {
-            document.querySelectorAll(".hero, .features, .section").forEach(function (section) {
-                section.style.display = "";
-            });
-
-            page.style.display = "none";
-
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-        });
-
-        page.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
     };
 
-    const buttons = document.querySelectorAll(
-        "button, [role='button'], .icon, .icon-card, .tool-card, .feature-card"
-    );
 
-    buttons.forEach(function (button) {
+    const homeHero = document.getElementById("home-hero");
+    const features = document.getElementById("features");
+    const aboutSection = document.getElementById("about-section");
 
-        button.addEventListener("click", function (event) {
+    const toolPage = document.getElementById("tool-page");
+    const toolIcon = document.getElementById("tool-icon");
+    const toolTitle = document.getElementById("tool-title");
+    const toolDescription = document.getElementById("tool-description");
 
-            const action =
-                button.dataset.action ||
-                button.dataset.target ||
-                button.dataset.page ||
-                "";
+    const backHome = document.getElementById("back-home");
 
-            console.log("Aluniverse action:", action);
 
-            button.style.transform = "scale(0.97)";
+    window.openTool = function (tool) {
 
-            setTimeout(function () {
-                button.style.transform = "";
-            }, 120);
+        console.log("Opening tool:", tool);
 
-            const targetId = button.dataset.target;
+        const selectedTool = tools[tool];
 
-            if (targetId) {
+        if (!selectedTool) {
 
-                const target = document.getElementById(
-                    targetId.replace("#", "")
-                );
+            console.error("Unknown Aluniverse tool:", tool);
 
-                if (target) {
+            return;
+        }
 
-                    event.preventDefault();
 
-                    document.querySelectorAll(
-                        ".page, .section, .panel, .tool-page, .tool.page"
-                    ).forEach(function (section) {
-                        section.style.display = "none";
-                    });
+        toolIcon.textContent = selectedTool.icon;
 
-                    target.style.display = "block";
+        toolTitle.textContent = selectedTool.title;
 
-                    target.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start"
-                    });
+        toolDescription.textContent = selectedTool.description;
 
-                    return;
-                }
-            }
 
-            const page = button.dataset.page;
+        homeHero.style.display = "none";
 
-            if (page) {
-                event.preventDefault();
-                window.location.href = page;
-                return;
-            }
+        features.style.display = "none";
 
-            if (
-                button.tagName.toLowerCase() === "a" &&
-                button.getAttribute("href") &&
-                button.getAttribute("href") !== "#"
-            ) {
-                return;
-            }
+        aboutSection.style.display = "none";
 
-            if (action) {
-                console.log("Selected:", action);
-            }
+
+        toolPage.style.display = "block";
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
         });
+
+    };
+
+
+    document.querySelectorAll(".card[data-tool]").forEach(function (card) {
+
+        card.addEventListener("click", function () {
+
+            const tool = card.dataset.tool;
+
+            openTool(tool);
+
+        });
+
     });
 
-    document.querySelectorAll("[data-action]").forEach(function (element) {
 
-        element.addEventListener("click", function () {
+    backHome.addEventListener("click", function () {
 
-            const action = element.dataset.action;
+        toolPage.style.display = "none";
 
-            console.log(
-                "Aluniverse selected action:",
-                action
-            );
+        homeHero.style.display = "";
+
+        features.style.display = "";
+
+        aboutSection.style.display = "";
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
         });
+
     });
 
-    document.querySelectorAll("a[href='#']").forEach(function (link) {
-
-        link.addEventListener("click", function (event) {
-            event.preventDefault();
-        });
-    });
 
     window.Aluniverse = app;
 
