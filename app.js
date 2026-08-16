@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const app = {
         name: "Aluniverse",
-        version: "2.0.0",
+        version: "2.1.0",
         status: "ready"
     };
 
