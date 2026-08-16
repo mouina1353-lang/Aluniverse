@@ -664,17 +664,51 @@ h1{
             }
         },
 
-        async ai(request) {
 
-            return {
-                success: true,
-                tool: "ai",
-                type: "text",
-                message:
-                    "درخواست هوش مصنوعی توسط هسته Aluniverse دریافت شد.",
-                input: request.input
-            };
-        },
+
+async ai(request) {
+
+    try {
+
+        const response = await fetch(
+            "https://text.pollinations.ai/" +
+            encodeURIComponent(request.input)
+        );
+
+        if (!response.ok) {
+            throw new Error("AI_API_ERROR");
+        }
+
+        const answer = await response.text();
+
+        return {
+            success: true,
+            tool: "ai",
+            type: "text",
+            message: answer,
+            input: request.input
+        };
+
+    } catch (error) {
+
+        console.error(
+            "Aluniverse AI Engine Error:",
+            error
+        );
+
+        return {
+            success: false,
+            tool: "ai",
+            type: "error",
+            message:
+                "❌ ارتباط با موتور هوش مصنوعی برقرار نشد.",
+            input: request.input
+        };
+    }
+},
+
+
+        
 
         async image(request) {
 
