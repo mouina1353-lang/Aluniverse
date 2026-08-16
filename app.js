@@ -812,56 +812,85 @@ async ai(request) {
 
 
 
-    /* =========================
-   CARD EVENTS - 6 TOOLS
-========================= */
+        /* =========================
+       CARD EVENTS - 6 TOOLS
+    ========================= */
 
-document.querySelectorAll(".card").forEach(function (card) {
+    document.querySelectorAll(".card").forEach(function (card) {
 
-    let tool = card.getAttribute("data-tool");
+        let tool = card.getAttribute("data-tool");
 
-    if (!tool) {
-        const onclick = card.getAttribute("onclick");
+        if (!tool) {
 
-        if (onclick) {
-            const match = onclick.match(
-                /openTool\(['"]([^'"]+)['"]\)/
-            );
+            const onclick = card.getAttribute("onclick");
 
-            if (match) {
-                tool = match[1];
+            if (onclick) {
+
+                const match = onclick.match(
+                    /openTool\(['"]([^'"]+)['"]\)/
+                );
+
+                if (match) {
+                    tool = match[1];
+                }
             }
         }
-    }
 
-    if (!tool) return;
+        if (!tool) {
+            return;
+        }
 
-    card.setAttribute("role", "button");
-    card.setAttribute("tabindex", "0");
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
 
-    card.addEventListener("click", function (event) {
-
-        event.preventDefault();
-
-        showTool(tool);
-
-    });
-
-    card.addEventListener("keydown", function (event) {
-
-        if (
-            event.key === "Enter" ||
-            event.key === " "
-        ) {
+        card.addEventListener("click", function (event) {
 
             event.preventDefault();
 
             showTool(tool);
-        
-    ³
+
+        });
+
+        card.addEventListener("keydown", function (event) {
+
+            if (
+                event.key === "Enter" ||
+                event.key === " "
+            ) {
+
+                event.preventDefault();
+
+                showTool(tool);
+            }
+
+        });
+
+    });
+
+
+    /* =========================
+       BACK HOME
+    ========================= */
+
+    backHome.addEventListener("click", function () {
+
+        showHome();
+
+    });
+
+
+    /* =========================
+       ALUNIVERSE READY
+    ========================= */
+
+    window.Aluniverse = app;
+
+    console.log("Aluniverse is ready.");
+    console.log("Version:", app.version);
+    console.log("6 operational tools loaded.");
 
 });
-    
+     
 
 
 
