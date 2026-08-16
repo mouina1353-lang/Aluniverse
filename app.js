@@ -243,57 +243,71 @@ function createAI() {
        2. IMAGE
     ========================= */
 
+
+
+    
     function createImage() {
 
-        const title = document.createElement("h3");
-        title.textContent = "تولید تصویر 🎨";
+    const title = document.createElement("h3");
+    title.textContent = "تولید تصویر 🎨";
 
-        const textarea = createTextarea(
-            "ایده تصویر را بنویسید..."
-        );
+    const textarea = createTextarea(
+        "ایده تصویر را بنویسید..."
+    );
 
-        const button = document.createElement("button");
-        button.textContent = "🎨 ایجاد تصویر";
-        styleButton(button);
+    const button = document.createElement("button");
+    button.textContent = "🎨 ایجاد تصویر";
+    styleButton(button);
 
-        const result = createResult();
+    const result = createResult();
 
-        button.onclick = function () {
+    button.onclick = async function () {
 
-            const prompt = textarea.value.trim();
+        const prompt = textarea.value.trim();
 
-            if (!prompt) {
-                result.textContent =
-                    "⚠️ ابتدا ایده تصویر را وارد کنید.";
-                return;
+        if (!prompt) {
+            result.textContent =
+                "⚠️ ابتدا ایده تصویر را وارد کنید.";
+            return;
+        }
+
+        result.textContent =
+            "⏳ Aluniverse Engine در حال آماده‌سازی تصویر...";
+
+        try {
+
+            const response =
+                await AluniverseEngine.run("image", prompt);
+
+            if (!response.success) {
+                throw new Error("IMAGE_ENGINE_ERROR");
             }
 
-            result.textContent =
-                "⏳ درخواست تولید تصویر آماده شد...";
-
-            /*
-             * API اصلی تصویر باید از طریق Backend
-             * Aluniverse متصل شود.
-             */
+            result.innerHTML =
+                "<strong>🎨 درخواست تصویر دریافت شد.</strong><br><br>" +
+                "⏳ در حال تولید تصویر...";
 
             const image = document.createElement("img");
 
             image.src =
                 "https://image.pollinations.ai/prompt/" +
-                encodeURIComponent(prompt) +
-                "?width=1024&height=1024";
+                encodeURIComponent(response.prompt) +
+                "?width=1024&height=1024&nologo=true";
 
-            image.alt = prompt;
+            image.alt = response.prompt;
 
             image.style.width = "100%";
             image.style.maxWidth = "600px";
             image.style.borderRadius = "20px";
             image.style.marginTop = "15px";
+            image.style.display = "block";
+            image.style.marginLeft = "auto";
+            image.style.marginRight = "auto";
 
             image.onload = function () {
 
                 result.innerHTML =
-                    "<strong>✅ تصویر تولید شد.</strong>";
+                    "<strong>✅ تصویر با موفقیت تولید شد.</strong>";
 
                 result.appendChild(image);
             };
@@ -301,17 +315,28 @@ function createAI() {
             image.onerror = function () {
 
                 result.innerHTML =
-                    "⚠️ سرویس تولید تصویر فعلی پاسخ نداد." +
-                    "<br><br>" +
-                    "برای نسخه نهایی باید API تصویر Aluniverse متصل شود.";
+                    "❌ تولید تصویر انجام نشد.<br><br>" +
+                    "لطفاً دوباره تلاش کنید.";
             };
-        };
 
-        toolWorkspace.appendChild(title);
-        toolWorkspace.appendChild(textarea);
-        toolWorkspace.appendChild(button);
-        toolWorkspace.appendChild(result);
-    }
+        } catch (error) {
+
+            console.error(
+                "Aluniverse Image Error:",
+                error
+            );
+
+            result.textContent =
+                "❌ خطا در موتور تولید تصویر.";
+        }
+    };
+
+    toolWorkspace.appendChild(title);
+    toolWorkspace.appendChild(textarea);
+    toolWorkspace.appendChild(button);
+    toolWorkspace.appendChild(result);
+}
+    
 
     /* =========================
        3. VIDEO
