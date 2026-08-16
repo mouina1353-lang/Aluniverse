@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const app = {
         name: "Aluniverse",
-        version: "1.3.0",
+        version: "2.0.0",
         status: "ready"
     };
 
@@ -10,37 +10,37 @@ document.addEventListener("DOMContentLoaded", function () {
         ai: {
             icon: "🤖",
             title: "هوش مصنوعی",
-            description: "ابزار هوشمند Aluniverse برای پاسخ‌گویی، تحلیل، حل مسئله و انجام پروژه‌های مختلف."
+            description: "دستیار هوشمند Aluniverse برای پاسخ‌گویی، تحلیل و حل مسئله."
         },
 
         image: {
             icon: "🎨",
             title: "تولید تصویر",
-            description: "ایجاد تصاویر خلاقانه و حرفه‌ای با کمک هوش مصنوعی."
+            description: "ایجاد تصاویر خلاقانه با کمک هوش مصنوعی."
         },
 
         video: {
             icon: "🎬",
             title: "ویدئو و انیمیشن",
-            description: "ساخت ویدئو، انیمیشن و محتوای تصویری."
+            description: "ساخت سناریو، استوری‌بورد و آماده‌سازی پروژه ویدئویی."
         },
 
         content: {
             icon: "✍️",
             title: "تولید محتوا",
-            description: "تولید مقاله، کتاب، متن تبلیغاتی و محتوای شبکه‌های اجتماعی."
+            description: "تولید مقاله، کتاب، تبلیغات و محتوای شبکه‌های اجتماعی."
         },
 
         web: {
             icon: "🌐",
             title: "طراحی وب",
-            description: "طراحی و توسعه وب‌سایت‌ها و پروژه‌های دیجیتال."
+            description: "ساخت ساختار، کد و پیش‌نمایش پروژه‌های وب."
         },
 
         execute: {
             icon: "🚀",
             title: "از ایده تا اجرا",
-            description: "هدایت پروژه از ایده اولیه تا برنامه‌ریزی، ساخت و اجرای نهایی."
+            description: "تبدیل ایده به برنامه اجرایی مرحله‌به‌مرحله."
         }
     };
 
@@ -73,13 +73,59 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!toolWorkspace) {
         toolWorkspace = document.createElement("div");
         toolWorkspace.id = "tool-workspace";
-
-        toolWorkspace.style.maxWidth = "700px";
-        toolWorkspace.style.margin = "30px auto";
-        toolWorkspace.style.padding = "20px";
-        toolWorkspace.style.textAlign = "center";
-
         toolPage.appendChild(toolWorkspace);
+    }
+
+    toolWorkspace.style.maxWidth = "700px";
+    toolWorkspace.style.margin = "30px auto";
+    toolWorkspace.style.padding = "20px";
+    toolWorkspace.style.textAlign = "center";
+    toolWorkspace.style.direction = "rtl";
+
+    function styleButton(button) {
+        button.style.marginTop = "15px";
+        button.style.padding = "14px 30px";
+        button.style.border = "none";
+        button.style.borderRadius = "30px";
+        button.style.background = "#5b35d5";
+        button.style.color = "#fff";
+        button.style.fontSize = "17px";
+        button.style.cursor = "pointer";
+    }
+
+    function createTextarea(placeholder) {
+
+        const textarea = document.createElement("textarea");
+
+        textarea.placeholder = placeholder;
+
+        textarea.style.width = "100%";
+        textarea.style.minHeight = "150px";
+        textarea.style.padding = "15px";
+        textarea.style.marginTop = "15px";
+        textarea.style.borderRadius = "15px";
+        textarea.style.border = "1px solid #ccc";
+        textarea.style.fontSize = "16px";
+        textarea.style.direction = "rtl";
+        textarea.style.resize = "vertical";
+        textarea.style.boxSizing = "border-box";
+
+        return textarea;
+    }
+
+    function createResult() {
+
+        const result = document.createElement("div");
+
+        result.style.marginTop = "25px";
+        result.style.padding = "15px";
+        result.style.borderRadius = "15px";
+        result.style.background = "#f5f1ff";
+        result.style.lineHeight = "2";
+        result.style.whiteSpace = "pre-wrap";
+        result.style.textAlign = "right";
+
+        return result;
     }
 
     function showHome() {
@@ -129,194 +175,477 @@ document.addEventListener("DOMContentLoaded", function () {
         showTool(tool);
     };
 
+    /* =========================
+       1. AI
+    ========================= */
+
+    function createAI() {
+
+        const title = document.createElement("h3");
+        title.textContent = "دستیار هوش مصنوعی 🤖";
+
+        const textarea = createTextarea(
+            "سؤال یا درخواست خود را بنویسید..."
+        );
+
+        const button = document.createElement("button");
+        button.textContent = "🤖 ارسال درخواست";
+        styleButton(button);
+
+        const result = createResult();
+
+        button.onclick = async function () {
+
+            const text = textarea.value.trim();
+
+            if (!text) {
+                result.textContent =
+                    "⚠️ لطفاً درخواست خود را وارد کنید.";
+                return;
+            }
+
+            result.textContent =
+                "⏳ در حال پردازش درخواست...";
+
+            /*
+             * این قسمت برای اتصال Backend اصلی Aluniverse
+             * آماده شده است.
+             *
+             * نمونه:
+             *
+             * fetch("https://YOUR-BACKEND/api/ai", ...)
+             */
+
+            try {
+
+                const response = await fetch(
+                    "https://gen.pollinations.ai/text/" +
+                    encodeURIComponent(text)
+                );
+
+                if (!response.ok) {
+                    throw new Error("API error");
+                }
+
+                const answer = await response.text();
+
+                result.textContent =
+                    "🤖 پاسخ هوش مصنوعی:\n\n" + answer;
+
+            } catch (error) {
+
+                result.innerHTML =
+                    "⚠️ موتور AI هنوز به Backend اصلی Aluniverse متصل نشده است." +
+                    "<br><br>" +
+                    "ساختار ارسال درخواست آماده است.";
+
+                console.error(error);
+            }
+        };
+
+        toolWorkspace.appendChild(title);
+        toolWorkspace.appendChild(textarea);
+        toolWorkspace.appendChild(button);
+        toolWorkspace.appendChild(result);
+    }
+
+    /* =========================
+       2. IMAGE
+    ========================= */
+
+    function createImage() {
+
+        const title = document.createElement("h3");
+        title.textContent = "تولید تصویر 🎨";
+
+        const textarea = createTextarea(
+            "ایده تصویر را بنویسید..."
+        );
+
+        const button = document.createElement("button");
+        button.textContent = "🎨 ایجاد تصویر";
+        styleButton(button);
+
+        const result = createResult();
+
+        button.onclick = function () {
+
+            const prompt = textarea.value.trim();
+
+            if (!prompt) {
+                result.textContent =
+                    "⚠️ ابتدا ایده تصویر را وارد کنید.";
+                return;
+            }
+
+            result.textContent =
+                "⏳ درخواست تولید تصویر آماده شد...";
+
+            /*
+             * API اصلی تصویر باید از طریق Backend
+             * Aluniverse متصل شود.
+             */
+
+            const image = document.createElement("img");
+
+            image.src =
+                "https://image.pollinations.ai/prompt/" +
+                encodeURIComponent(prompt) +
+                "?width=1024&height=1024";
+
+            image.alt = prompt;
+
+            image.style.width = "100%";
+            image.style.maxWidth = "600px";
+            image.style.borderRadius = "20px";
+            image.style.marginTop = "15px";
+
+            image.onload = function () {
+
+                result.innerHTML =
+                    "<strong>✅ تصویر تولید شد.</strong>";
+
+                result.appendChild(image);
+            };
+
+            image.onerror = function () {
+
+                result.innerHTML =
+                    "⚠️ سرویس تولید تصویر فعلی پاسخ نداد." +
+                    "<br><br>" +
+                    "برای نسخه نهایی باید API تصویر Aluniverse متصل شود.";
+            };
+        };
+
+        toolWorkspace.appendChild(title);
+        toolWorkspace.appendChild(textarea);
+        toolWorkspace.appendChild(button);
+        toolWorkspace.appendChild(result);
+    }
+
+    /* =========================
+       3. VIDEO
+    ========================= */
+
+    function createVideo() {
+
+        const title = document.createElement("h3");
+        title.textContent = "ساخت ویدئو و انیمیشن 🎬";
+
+        const textarea = createTextarea(
+            "موضوع یا سناریوی ویدئو را بنویسید..."
+        );
+
+        const button = document.createElement("button");
+        button.textContent = "🎬 آماده‌سازی ویدئو";
+        styleButton(button);
+
+        const result = createResult();
+
+        button.onclick = function () {
+
+            const text = textarea.value.trim();
+
+            if (!text) {
+                result.textContent =
+                    "⚠️ موضوع ویدئو را وارد کنید.";
+                return;
+            }
+
+            result.innerHTML =
+                "<strong>🎬 پروژه ویدئو ایجاد شد.</strong><br><br>" +
+                "موضوع:<br>" +
+                text +
+                "<br><br>" +
+                "مرحله بعد: ارسال پروژه به موتور تولید ویدئوی Aluniverse.";
+        };
+
+        toolWorkspace.appendChild(title);
+        toolWorkspace.appendChild(textarea);
+        toolWorkspace.appendChild(button);
+        toolWorkspace.appendChild(result);
+    }
+
+    /* =========================
+       4. CONTENT
+    ========================= */
+
+    function createContent() {
+
+        const title = document.createElement("h3");
+        title.textContent = "تولید محتوا ✍️";
+
+        const textarea = createTextarea(
+            "موضوع محتوا را بنویسید..."
+        );
+
+        const select = document.createElement("select");
+
+        select.style.width = "100%";
+        select.style.padding = "13px";
+        select.style.marginTop = "10px";
+        select.style.borderRadius = "12px";
+        select.style.fontSize = "16px";
+        select.style.direction = "rtl";
+
+        [
+            ["article", "مقاله"],
+            ["social", "پست شبکه اجتماعی"],
+            ["ad", "متن تبلیغاتی"],
+            ["book", "کتاب"],
+            ["description", "توضیحات محصول"]
+        ].forEach(function (item) {
+
+            const option = document.createElement("option");
+
+            option.value = item[0];
+            option.textContent = item[1];
+
+            select.appendChild(option);
+        });
+
+        const button = document.createElement("button");
+        button.textContent = "✍️ تولید محتوا";
+        styleButton(button);
+
+        const result = createResult();
+
+        button.onclick = function () {
+
+            const topic = textarea.value.trim();
+
+            if (!topic) {
+                result.textContent =
+                    "⚠️ موضوع محتوا را وارد کنید.";
+                return;
+            }
+
+            const type =
+                select.options[select.selectedIndex].text;
+
+            result.textContent =
+                "⏳ در حال آماده‌سازی محتوای " +
+                type +
+                "...";
+
+            setTimeout(function () {
+
+                result.textContent =
+                    "✍️ پیش‌نویس محتوای شما\n\n" +
+                    "نوع محتوا: " + type +
+                    "\nموضوع: " + topic +
+                    "\n\n" +
+                    "این بخش برای اتصال به موتور تولید محتوای اصلی Aluniverse آماده است.";
+
+            }, 500);
+        };
+
+        toolWorkspace.appendChild(title);
+        toolWorkspace.appendChild(textarea);
+        toolWorkspace.appendChild(select);
+        toolWorkspace.appendChild(button);
+        toolWorkspace.appendChild(result);
+    }
+
+    /* =========================
+       5. WEB DESIGN
+    ========================= */
+
+    function createWeb() {
+
+        const title = document.createElement("h3");
+        title.textContent = "طراحی وب 🌐";
+
+        const textarea = createTextarea(
+            "مثلاً: یک سایت فروشگاهی مدرن برای فروش محصولات دیجیتال"
+        );
+
+        const button = document.createElement("button");
+        button.textContent = "🌐 ساخت نمونه وب";
+        styleButton(button);
+
+        const result = createResult();
+
+        button.onclick = function () {
+
+            const idea = textarea.value.trim();
+
+            if (!idea) {
+                result.textContent =
+                    "⚠️ ایده وب‌سایت را وارد کنید.";
+                return;
+            }
+
+            const html =
+`<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aluniverse Web Project</title>
+<style>
+body{
+    font-family:Arial,sans-serif;
+    margin:0;
+    padding:40px;
+    background:#f5f1ff;
+    text-align:center;
+}
+.container{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:40px;
+    border-radius:25px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+h1{
+    color:#5b35d5;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>پروژه وب Aluniverse</h1>
+<p>${escapeHTML(idea)}</p>
+<p>این نمونه توسط ابزار طراحی وب Aluniverse ساخته شد.</p>
+</div>
+</body>
+</html>`;
+
+            result.innerHTML =
+                "<strong>✅ نمونه وب ساخته شد.</strong>";
+
+            const preview = document.createElement("iframe");
+
+            preview.style.width = "100%";
+            preview.style.height = "350px";
+            preview.style.marginTop = "20px";
+            preview.style.border = "1px solid #ccc";
+            preview.style.borderRadius = "15px";
+
+            preview.srcdoc = html;
+
+            result.appendChild(preview);
+        };
+
+        toolWorkspace.appendChild(title);
+        toolWorkspace.appendChild(textarea);
+        toolWorkspace.appendChild(button);
+        toolWorkspace.appendChild(result);
+    }
+
+    function escapeHTML(text) {
+
+        const div = document.createElement("div");
+        div.textContent = text;
+
+        return div.innerHTML;
+    }
+
+    /* =========================
+       6. IDEA → EXECUTION
+    ========================= */
+
+    function createExecute() {
+
+        const title = document.createElement("h3");
+        title.textContent = "از ایده تا اجرا 🚀";
+
+        const textarea = createTextarea(
+            "ایده پروژه خود را بنویسید..."
+        );
+
+        const button = document.createElement("button");
+        button.textContent = "🚀 تبدیل ایده به برنامه اجرا";
+        styleButton(button);
+
+        const result = createResult();
+
+        button.onclick = function () {
+
+            const idea = textarea.value.trim();
+
+            if (!idea) {
+                result.textContent =
+                    "⚠️ ابتدا ایده پروژه را وارد کنید.";
+                return;
+            }
+
+            result.innerHTML =
+                "<strong>🚀 نقشه اجرای پروژه</strong><br><br>" +
+
+                "۱. تحلیل ایده<br>" +
+                "۲. تعیین هدف و مخاطب<br>" +
+                "۳. تعیین امکانات موردنیاز<br>" +
+                "۴. طراحی ساختار پروژه<br>" +
+                "۵. انتخاب فناوری و ابزارها<br>" +
+                "۶. ساخت نسخه اولیه<br>" +
+                "۷. آزمایش و رفع خطا<br>" +
+                "۸. آماده‌سازی نسخه نهایی<br>" +
+                "۹. انتشار و اجرا<br><br>" +
+
+                "<strong>ایده ثبت‌شده:</strong><br>" +
+                escapeHTML(idea);
+        };
+
+        toolWorkspace.appendChild(title);
+        toolWorkspace.appendChild(textarea);
+        toolWorkspace.appendChild(button);
+        toolWorkspace.appendChild(result);
+    }
+
+    /* =========================
+       TOOL INTERFACE
+    ========================= */
+
     function createToolInterface(tool) {
 
         toolWorkspace.innerHTML = "";
 
         if (tool === "ai") {
-
-            const title = document.createElement("h3");
-            title.textContent = "دستیار هوش مصنوعی";
-
-            const textarea = document.createElement("textarea");
-
-            textarea.placeholder =
-                "سؤال یا درخواست خود را بنویسید...";
-
-            textarea.style.width = "100%";
-            textarea.style.minHeight = "140px";
-            textarea.style.padding = "15px";
-            textarea.style.marginTop = "15px";
-            textarea.style.borderRadius = "15px";
-            textarea.style.border = "1px solid #ccc";
-            textarea.style.fontSize = "16px";
-            textarea.style.direction = "rtl";
-            textarea.style.resize = "vertical";
-
-            const button = document.createElement("button");
-
-            button.textContent = "🤖 ارسال درخواست";
-
-            button.style.marginTop = "15px";
-            button.style.padding = "14px 30px";
-            button.style.border = "none";
-            button.style.borderRadius = "30px";
-            button.style.background = "#5b35d5";
-            button.style.color = "white";
-            button.style.fontSize = "17px";
-            button.style.cursor = "pointer";
-
-            const result = document.createElement("div");
-
-            result.style.marginTop = "25px";
-
-            button.addEventListener("click", function () {
-
-                const text = textarea.value.trim();
-
-                if (!text) {
-                    result.innerHTML =
-                        "<p>لطفاً درخواست خود را وارد کنید.</p>";
-                    return;
-                }
-
-                result.innerHTML =
-                    "<p>✅ درخواست دریافت شد.</p>" +
-                    "<p>هسته هوش مصنوعی آماده اتصال به API اصلی است.</p>";
-            });
-
-            toolWorkspace.appendChild(title);
-            toolWorkspace.appendChild(textarea);
-            toolWorkspace.appendChild(button);
-            toolWorkspace.appendChild(result);
-
+            createAI();
             return;
         }
 
         if (tool === "image") {
-
-            const title = document.createElement("h3");
-
-            title.textContent =
-                "ایده تصویر خود را بنویسید";
-
-            const textarea = document.createElement("textarea");
-
-            textarea.placeholder =
-                "مثلاً: یک شهر آینده‌نگر زیبا در شب با نورهای نئونی و آسمان پرستاره";
-
-            textarea.style.width = "100%";
-            textarea.style.minHeight = "140px";
-            textarea.style.padding = "15px";
-            textarea.style.marginTop = "15px";
-            textarea.style.borderRadius = "15px";
-            textarea.style.border = "1px solid #ccc";
-            textarea.style.fontSize = "16px";
-            textarea.style.direction = "rtl";
-            textarea.style.resize = "vertical";
-
-            const button = document.createElement("button");
-
-            button.textContent =
-                "🎨 تولید تصویر";
-
-            button.style.marginTop = "15px";
-            button.style.padding = "14px 30px";
-            button.style.border = "none";
-            button.style.borderRadius = "30px";
-            button.style.background = "#5b35d5";
-            button.style.color = "white";
-            button.style.fontSize = "17px";
-            button.style.cursor = "pointer";
-
-            const result = document.createElement("div");
-
-            result.style.marginTop = "25px";
-
-            button.addEventListener("click", function () {
-
-                const prompt = textarea.value.trim();
-
-                if (!prompt) {
-
-                    result.innerHTML =
-                        "<p>لطفاً ابتدا ایده تصویر را وارد کنید.</p>";
-
-                    return;
-                }
-
-                result.innerHTML =
-                    "<p>⏳ در حال آماده‌سازی تصویر...</p>";
-
-                const image = document.createElement("img");
-
-                image.src =
-                    "https://image.pollinations.ai/prompt/" +
-                    encodeURIComponent(prompt) +
-                    "?width=1024&height=1024&nologo=true";
-
-                image.alt = prompt;
-
-                image.style.width = "100%";
-                image.style.maxWidth = "600px";
-                image.style.borderRadius = "20px";
-                image.style.marginTop = "15px";
-
-                image.onload = function () {
-
-                    result.innerHTML =
-                        "<p>✅ تصویر آماده شد.</p>";
-
-                    result.appendChild(image);
-                };
-
-                image.onerror = function () {
-
-                    result.innerHTML =
-                        "<p>❌ تولید تصویر انجام نشد. دوباره تلاش کنید.</p>";
-                };
-            });
-
-            toolWorkspace.appendChild(title);
-            toolWorkspace.appendChild(textarea);
-            toolWorkspace.appendChild(button);
-            toolWorkspace.appendChild(result);
-
+            createImage();
             return;
         }
 
-        const box = document.createElement("div");
+        if (tool === "video") {
+            createVideo();
+            return;
+        }
 
-        box.style.padding = "25px";
-        box.style.borderRadius = "20px";
-        box.style.background = "#f3efff";
-        box.style.marginTop = "20px";
+        if (tool === "content") {
+            createContent();
+            return;
+        }
 
-        const title = document.createElement("h3");
+        if (tool === "web") {
+            createWeb();
+            return;
+        }
 
-        title.textContent =
-            tools[tool].title;
-
-        const text = document.createElement("p");
-
-        text.textContent =
-            "✅ ابزار با موفقیت باز شد. محیط عملیاتی این بخش آماده اتصال به موتور اصلی Aluniverse است.";
-
-        text.style.marginTop = "10px";
-
-        box.appendChild(title);
-        box.appendChild(text);
-
-        toolWorkspace.appendChild(box);
+        if (tool === "execute") {
+            createExecute();
+            return;
+        }
     }
 
-    document.querySelectorAll(".card[data-tool]").forEach(function (card) {
+    /* =========================
+       CARD EVENTS
+    ========================= */
+
+    document.querySelectorAll(".card").forEach(function (card) {
+
+        const tool =
+            card.getAttribute("data-tool");
+
+        if (!tool) return;
 
         card.addEventListener("click", function () {
-
-            const tool =
-                card.getAttribute("data-tool");
-
             showTool(tool);
         });
 
@@ -331,10 +660,6 @@ document.addEventListener("DOMContentLoaded", function () {
             ) {
 
                 event.preventDefault();
-
-                const tool =
-                    card.getAttribute("data-tool");
-
                 showTool(tool);
             }
         });
@@ -348,5 +673,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log("Aluniverse is ready.");
     console.log("Version:", app.version);
+    console.log("6 operational tools loaded.");
 
 });
