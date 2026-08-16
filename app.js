@@ -595,6 +595,133 @@ h1{
         toolWorkspace.appendChild(result);
     }
 
+
+
+
+
+        /* =========================
+       ALUNIVERSE CORE ENGINE
+    ========================= */
+
+    const AluniverseEngine = {
+
+        version: "1.0.0",
+
+        async run(tool, input) {
+
+            if (!input || !input.trim()) {
+                throw new Error("EMPTY_INPUT");
+            }
+
+            const request = {
+                tool: tool,
+                input: input.trim(),
+                timestamp: new Date().toISOString()
+            };
+
+            console.log(
+                "Aluniverse Engine Request:",
+                request
+            );
+
+            switch (tool) {
+
+                case "ai":
+                    return this.ai(request);
+
+                case "image":
+                    return this.image(request);
+
+                case "video":
+                    return this.video(request);
+
+                case "content":
+                    return this.content(request);
+
+                case "web":
+                    return this.web(request);
+
+                case "execute":
+                    return this.execute(request);
+
+                default:
+                    throw new Error("UNKNOWN_TOOL");
+            }
+        },
+
+        async ai(request) {
+
+            return {
+                success: true,
+                tool: "ai",
+                type: "text",
+                message:
+                    "درخواست هوش مصنوعی توسط هسته Aluniverse دریافت شد.",
+                input: request.input
+            };
+        },
+
+        async image(request) {
+
+            return {
+                success: true,
+                tool: "image",
+                type: "image",
+                prompt: request.input
+            };
+        },
+
+        async video(request) {
+
+            return {
+                success: true,
+                tool: "video",
+                type: "video",
+                prompt: request.input
+            };
+        },
+
+        async content(request) {
+
+            return {
+                success: true,
+                tool: "content",
+                type: "text",
+                message:
+                    "درخواست تولید محتوا توسط هسته Aluniverse دریافت شد.",
+                input: request.input
+            };
+        },
+
+        async web(request) {
+
+            return {
+                success: true,
+                tool: "web",
+                type: "web",
+                prompt: request.input
+            };
+        },
+
+        async execute(request) {
+
+            return {
+                success: true,
+                tool: "execute",
+                type: "workflow",
+                message:
+                    "ایده وارد موتور اجرای Aluniverse شد.",
+                input: request.input
+            };
+        }
+    };
+
+    window.AluniverseEngine = AluniverseEngine;
+
+    console.log(
+        "Aluniverse Core Engine:",
+        "ONLINE"
+    );
     /* =========================
        TOOL INTERFACE
     ========================= */
