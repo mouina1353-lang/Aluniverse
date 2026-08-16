@@ -852,3 +852,30 @@ async ai(request) {
     console.log("6 operational tools loaded.");
 
 });
+
+window.openTool = async function(tool) {
+
+  const names = {
+    ai: "هوش مصنوعی",
+    image: "تولید تصویر",
+    video: "ویدئو و انیمیشن",
+    content: "تولید محتوا",
+    web: "طراحی وب",
+    execute: "از ایده تا اجرا"
+  };
+
+  const input = prompt(
+    "Aluniverse\n\n" +
+    names[tool] +
+    "\n\nدرخواست خود را وارد کنید:"
+  );
+
+  if (!input || !input.trim()) return;
+
+  alert(
+    "درخواست شما دریافت شد ✅\n\n" +
+    "ابزار: " + names[tool] +
+    "\n\n" +
+    "درخواست:\n" + input.trim()
+  );
+};
