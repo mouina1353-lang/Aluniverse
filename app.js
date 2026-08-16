@@ -810,48 +810,58 @@ async ai(request) {
         }
     }
 
+
+
     /* =========================
-       CARD EVENTS
-    ========================= */
+   CARD EVENTS - 6 TOOLS
+========================= */
 
-    document.querySelectorAll(".card").forEach(function (card) {
+document.querySelectorAll(".card").forEach(function (card) {
 
-        const tool =
-            card.getAttribute("data-tool");
+    let tool = card.getAttribute("data-tool");
 
-        if (!tool) return;
+    if (!tool) {
+        const onclick = card.getAttribute("onclick");
 
-        card.addEventListener("click", function () {
-            showTool(tool);
-        });
+        if (onclick) {
+            const match = onclick.match(
+                /openTool\(['"]([^'"]+)['"]\)/
+            );
 
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", "0");
-
-        card.addEventListener("keydown", function (event) {
-
-            if (
-                event.key === "Enter" ||
-                event.key === " "
-            ) {
-
-                event.preventDefault();
-                showTool(tool);
+            if (match) {
+                tool = match[1];
             }
-        });
+        }
+    }
+
+    if (!tool) return;
+
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+
+    card.addEventListener("click", function (event) {
+
+        event.preventDefault();
+
+        showTool(tool);
+
     });
 
-    backHome.addEventListener("click", function () {
-        showHome();
+    card.addEventListener("keydown", function (event) {
+
+        if (
+            event.key === "Enter" ||
+            event.key === " "
+        ) {
+
+            event.preventDefault();
+
+            showTool(tool);
+        }
     });
-
-    window.Aluniverse = app;
-
-    console.log("Aluniverse is ready.");
-    console.log("Version:", app.version);
-    console.log("6 operational tools loaded.");
 
 });
+    
 
 window.openTool = async function(tool) {
 
