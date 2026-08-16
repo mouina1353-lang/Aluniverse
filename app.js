@@ -179,75 +179,65 @@ document.addEventListener("DOMContentLoaded", function () {
        1. AI
     ========================= */
 
-    function createAI() {
 
-        const title = document.createElement("h3");
-        title.textContent = "دستیار هوش مصنوعی 🤖";
 
-        const textarea = createTextarea(
-            "سؤال یا درخواست خود را بنویسید..."
-        );
+function createAI() {
 
-        const button = document.createElement("button");
-        button.textContent = "🤖 ارسال درخواست";
-        styleButton(button);
+    const title = document.createElement("h3");
+    title.textContent = "دستیار هوش مصنوعی 🤖";
 
-        const result = createResult();
+    const textarea = createTextarea(
+        "سؤال یا درخواست خود را بنویسید..."
+    );
 
-        button.onclick = async function () {
+    const button = document.createElement("button");
+    button.textContent = "🤖 ارسال درخواست";
+    styleButton(button);
 
-            const text = textarea.value.trim();
+    const result = createResult();
 
-            if (!text) {
-                result.textContent =
-                    "⚠️ لطفاً درخواست خود را وارد کنید.";
-                return;
-            }
+    button.onclick = async function () {
+
+        const text = textarea.value.trim();
+
+        if (!text) {
+            result.textContent =
+                "⚠️ لطفاً درخواست خود را وارد کنید.";
+            return;
+        }
+
+        result.textContent =
+            "⏳ Aluniverse Engine در حال پردازش...";
+
+        try {
+
+            const response =
+                await AluniverseEngine.run("ai", text);
 
             result.textContent =
-                "⏳ در حال پردازش درخواست...";
+                "🤖 پاسخ موتور Aluniverse:\n\n" +
+                response.message +
+                "\n\nدرخواست شما:\n" +
+                response.input;
 
-            /*
-             * این قسمت برای اتصال Backend اصلی Aluniverse
-             * آماده شده است.
-             *
-             * نمونه:
-             *
-             * fetch("https://YOUR-BACKEND/api/ai", ...)
-             */
+        } catch (error) {
 
-            try {
+            console.error(
+                "Aluniverse AI Error:",
+                error
+            );
 
-                const response = await fetch(
-                    "https://gen.pollinations.ai/text/" +
-                    encodeURIComponent(text)
-                );
+            result.textContent =
+                "❌ خطا در پردازش درخواست.";
+        }
+    };
 
-                if (!response.ok) {
-                    throw new Error("API error");
-                }
-
-                const answer = await response.text();
-
-                result.textContent =
-                    "🤖 پاسخ هوش مصنوعی:\n\n" + answer;
-
-            } catch (error) {
-
-                result.innerHTML =
-                    "⚠️ موتور AI هنوز به Backend اصلی Aluniverse متصل نشده است." +
-                    "<br><br>" +
-                    "ساختار ارسال درخواست آماده است.";
-
-                console.error(error);
-            }
-        };
-
-        toolWorkspace.appendChild(title);
-        toolWorkspace.appendChild(textarea);
-        toolWorkspace.appendChild(button);
-        toolWorkspace.appendChild(result);
-    }
+    toolWorkspace.appendChild(title);
+    toolWorkspace.appendChild(textarea);
+    toolWorkspace.appendChild(button);
+    toolWorkspace.appendChild(result);
+}
+    
 
     /* =========================
        2. IMAGE
