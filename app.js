@@ -5,31 +5,26 @@ document.addEventListener("DOMContentLoaded", () => {
             title: "هوش مصنوعی",
             text: "اینجا می‌توانی با هوش مصنوعی Aluniverse گفتگو کنی و پاسخ بگیری."
         },
-
         image: {
             icon: "🎨",
             title: "تولید تصویر",
             text: "ایده یا توضیح تصویرت را وارد کن تا بخش تولید تصویر برایت آماده شود."
         },
-
         video: {
             icon: "🎬",
             title: "ویدئو و انیمیشن",
             text: "ساخت ویدئو، انیمیشن و محتوای متحرک از این بخش انجام می‌شود."
         },
-
         content: {
             icon: "✍️",
             title: "تولید محتوا",
             text: "مقاله، متن تبلیغاتی، کتاب، پست و محتوای حرفه‌ای تولید کن."
         },
-
         web: {
             icon: "🌐",
             title: "طراحی وب",
             text: "ایده خود را به ساختار و طراحی وب تبدیل کن."
         },
-
         execute: {
             icon: "🚀",
             title: "از ایده تا اجرا",
@@ -37,60 +32,72 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    function createPanel() {
+        let panel = document.getElementById("aluniverse-tool-panel");
+
+        if (panel) return panel;
+
+        panel = document.createElement("div");
+        panel.id = "aluniverse-tool-panel";
+
+        panel.innerHTML = `
+            <div class="aluniverse-tool-box">
+                <button id="aluniverse-close" type="button">✕</button>
+                <div class="tool-icon"></div>
+                <h2 id="aluniverse-tool-title"></h2>
+                <p id="aluniverse-tool-text"></p>
+
+                <textarea
+                    id="aluniverse-input"
+                    placeholder="ایده یا درخواست خود را اینجا وارد کنید..."
+                ></textarea>
+
+                <button id="aluniverse-start" type="button">
+                    شروع کار
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+
+        document
+            .getElementById("aluniverse-close")
+            .addEventListener("click", closeTool);
+
+        panel.addEventListener("click", (event) => {
+            if (event.target === panel) {
+                closeTool();
+            }
+        });
+
+        document
+            .getElementById("aluniverse-start")
+            .addEventListener("click", () => {
+                const input = document.getElementById("aluniverse-input");
+                const value = input.value.trim();
+
+                if (!value) {
+                    input.focus();
+                    return;
+                }
+
+                alert("درخواست شما در Aluniverse ثبت شد.");
+            });
+
+        return panel;
+    }
+
     function openTool(toolKey) {
         const tool = tools[toolKey];
 
-        if (!tool) {
-            console.log("Tool not found:", toolKey);
-            return;
-        }
+        if (!tool) return;
 
-        let panel = document.getElementById("aluniverse-tool-panel");
-
-        if (!panel) {
-            panel = document.createElement("div");
-            panel.id = "aluniverse-tool-panel";
-
-            panel.innerHTML = `
-                <div class="aluniverse-tool-box">
-                    <button id="aluniverse-close" type="button">✕</button>
-
-                    <div class="tool-icon">${tool.icon}</div>
-
-                    <h2 id="aluniverse-tool-title"></h2>
-
-                    <p id="aluniverse-tool-text"></p>
-
-                    <textarea
-                        id="aluniverse-input"
-                        placeholder="ایده یا درخواست خود را اینجا وارد کنید..."
-                    ></textarea>
-
-                    <button id="aluniverse-start" type="button">
-                        شروع کار
-                    </button>
-                </div>
-            `;
-
-            document.body.appendChild(panel);
-
-            document.getElementById("aluniverse-close")
-                .addEventListener("click", closeTool);
-
-            panel.addEventListener("click", (event) => {
-                if (event.target === panel) {
-                    closeTool();
-                }
-            });
-        }
-
-        document.getElementById("aluniverse-tool-title").textContent =
-            tool.title;
-
-        document.getElementById("aluniverse-tool-text").textContent =
-            tool.text;
+        const panel = createPanel();
 
         panel.querySelector(".tool-icon").textContent = tool.icon;
+        panel.querySelector("#aluniverse-tool-title").textContent = tool.title;
+        panel.querySelector("#aluniverse-tool-text").textContent = tool.text;
+        panel.querySelector("#aluniverse-input").value = "";
 
         panel.style.display = "flex";
     }
@@ -103,68 +110,32 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /*
-     * اتصال ۶ آیکون
-     */
+    document.addEventListener("click", (event) => {
+        const element = event.target.closest("[data-tool]");
 
-    const selectors = {
-        ai: [
-            "#ai",
-            "#ai-tool",
-            "[data-tool='ai']",
-            ".ai"
-        ],
+        if (!element) return;
 
-        image: [
-            "#image",
-            "#image-tool",
-            "[data-tool='image']",
-            ".image"
-        ],
+        const toolKey = element.getAttribute("data-tool");
 
-        video: [
-            "#video",
-            "#video-tool",
-            "[data-tool='video']",
-            ".video"
-        ],
+        if (tools[toolKey]) {
+            event.preventDefault();
+            openTool(toolKey);
+        }
+    });
 
-        content: [
-            "#content",
-            "#content-tool",
-            "[data-tool='content']",
-            ".content"
-        ],
+    Object.keys(tools).forEach((toolKey) => {
+        const selectors = [
+            `#${toolKey}`,
+            `#${toolKey}-tool`,
+            `.${toolKey}`
+        ];
 
-        web: [
-            "#web",
-            "#web-tool",
-            "[data-tool='web']",
-            ".web"
-        ],
-
-        execute: [
-            "#execute",
-            "#execute-tool",
-            "[data-tool='execute']",
-            ".execute"
-        ]
-    };
-
-    Object.keys(selectors).forEach((toolKey) => {
-        selectors[toolKey].forEach((selector) => {
+        selectors.forEach((selector) => {
             document.querySelectorAll(selector).forEach((element) => {
-                element.addEventListener("click", (event) => {
-                    event.preventDefault();
-                    openTool(toolKey);
-                });
+                element.setAttribute("data-tool", toolKey);
             });
         });
     });
-
-    /*
-     * استایل پنل ابزار
-     */
 
     const style = document.createElement("style");
 
@@ -177,7 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background: rgba(0,0,0,0.72);
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.72);
             direction: rtl;
         }
 
@@ -187,13 +159,14 @@ document.addEventListener("DOMContentLoaded", () => {
             max-height: 90vh;
             overflow-y: auto;
             padding: 30px;
+            box-sizing: border-box;
             border-radius: 24px;
             background: #ffffff;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
             text-align: center;
         }
 
-        .aluniverse-tool-box #aluniverse-close {
+        #aluniverse-close {
             position: absolute;
             top: 12px;
             left: 12px;
@@ -206,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cursor: pointer;
         }
 
-        .aluniverse-tool-box .tool-icon {
+        .tool-icon {
             font-size: 64px;
             margin-bottom: 10px;
         }
@@ -219,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .aluniverse-tool-box p {
             line-height: 1.9;
             font-size: 17px;
-            color: #555;
+            color: #555555;
         }
 
         #aluniverse-input {
@@ -228,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
             margin-top: 15px;
             padding: 15px;
             box-sizing: border-box;
-            border: 1px solid #ddd;
+            border: 1px solid #dddddd;
             border-radius: 14px;
             resize: vertical;
             font-family: inherit;
@@ -243,7 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
             border: none;
             border-radius: 14px;
             background: #111827;
-            color: white;
+            color: #ffffff;
             font-size: 17px;
             cursor: pointer;
         }
