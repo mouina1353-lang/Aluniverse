@@ -67,7 +67,6 @@ app.post("/api/ai", async (req, res) => {
             type: "text",
             message: response.output_text
         });
-
     } catch (error) {
         console.error("AI ERROR:", error);
 
@@ -101,7 +100,6 @@ app.post("/api/image", async (req, res) => {
             prompt: prompt.trim(),
             imageUrl: imageUrl
         });
-
     } catch (error) {
         console.error("IMAGE ERROR:", error);
 
@@ -130,7 +128,6 @@ app.post("/api/video", async (req, res) => {
             message: "درخواست ساخت ویدئو توسط Backend Aluniverse دریافت شد.",
             input: input.trim()
         });
-
     } catch (error) {
         console.error("VIDEO ERROR:", error);
 
@@ -159,7 +156,6 @@ app.post("/api/content", async (req, res) => {
             message: "درخواست تولید محتوا توسط Backend Aluniverse دریافت شد.",
             input: input.trim()
         });
-
     } catch (error) {
         console.error("CONTENT ERROR:", error);
 
@@ -188,7 +184,6 @@ app.post("/api/web", async (req, res) => {
             message: "درخواست طراحی وب توسط Backend Aluniverse دریافت شد.",
             input: input.trim()
         });
-
     } catch (error) {
         console.error("WEB ERROR:", error);
 
@@ -217,7 +212,6 @@ app.post("/api/execute", async (req, res) => {
             message: "ایده پروژه توسط Backend Aluniverse دریافت شد.",
             input: input.trim()
         });
-
     } catch (error) {
         console.error("EXECUTE ERROR:", error);
 
@@ -231,4 +225,3 @@ app.post("/api/execute", async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Aluniverse Backend running on port ${PORT}`);
 });
-```0
