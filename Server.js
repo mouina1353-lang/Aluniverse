@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,17 +9,14 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+app.use(express.static(path.join(__dirname)));
+
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
 app.get("/", (req, res) => {
-    res.json({
-        success: true,
-        name: "Aluniverse Backend",
-        version: "2.0.0",
-        status: "online"
-    });
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.get("/api/status", (req, res) => {
