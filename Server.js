@@ -220,6 +220,12 @@ app.post("/api/execute", async (req, res) => {
     }
 });
 
+
+app.get("/test", (req, res) => {
+    res.status(200).send("ALUNIVERSE_OK");
+});
+
+
 app.listen(PORT, () => {
     console.log(`Aluniverse Backend running on port ${PORT}`);
 });
