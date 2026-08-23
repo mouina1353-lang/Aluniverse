@@ -46,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     };
 
-
     const cards = document.querySelectorAll(".card[data-tool]");
 
     const homeHero = document.getElementById("home-hero");
@@ -60,16 +59,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const backButton = document.getElementById("back-home");
 
+    function createToolInterface(tool, toolKey) {
 
-    function createToolInterface(tool) {
-
-        const oldInterface =
-            document.getElementById("dynamic-tool-interface");
+        const oldInterface = document.getElementById("dynamic-tool-interface");
 
         if (oldInterface) {
             oldInterface.remove();
         }
-
 
         const interfaceBox = document.createElement("div");
 
@@ -79,7 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
         interfaceBox.style.margin = "20px auto 0";
         interfaceBox.style.textAlign = "right";
 
-
         const label = document.createElement("label");
 
         label.textContent = "درخواست خود را وارد کنید";
@@ -88,7 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
         label.style.marginBottom = "10px";
         label.style.fontWeight = "bold";
         label.style.color = "#39209b";
-
 
         const textarea = document.createElement("textarea");
 
@@ -103,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
         textarea.style.resize = "vertical";
         textarea.style.direction = "rtl";
         textarea.style.outline = "none";
-
 
         const actionButton = document.createElement("button");
 
@@ -120,7 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
         actionButton.style.fontWeight = "bold";
         actionButton.style.cursor = "pointer";
 
-
         const resultBox = document.createElement("div");
 
         resultBox.style.display = "none";
@@ -132,8 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         resultBox.style.whiteSpace = "pre-wrap";
         resultBox.style.lineHeight = "2";
 
-
-        actionButton.addEventListener("click", () => {
+        actionButton.addEventListener("click", async () => {
 
             const request = textarea.value.trim();
 
@@ -147,31 +138,87 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            actionButton.disabled = true;
+            actionButton.textContent = "در حال پردازش...";
 
             resultBox.style.display = "block";
 
             resultBox.textContent =
-                "درخواست شما دریافت شد.\n\n" +
-                "Aluniverse در حال آماده‌سازی این ابزار است.\n\n" +
-                "در مرحله بعد، این بخش به سرویس هوش مصنوعی متصل خواهد شد.";
+                "در حال ارتباط با هوش مصنوعی Aluniverse...";
 
+            try {
 
-            console.log("Aluniverse Tool:", tool.title);
+                if (toolKey === "ai") {
 
-            console.log("User Request:", request);
+                    const response = await fetch("/api/ai", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            message: request
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+
+                        throw new Error(
+                            data.error ||
+                            "ارتباط با هوش مصنوعی برقرار نشد."
+                        );
+                    }
+
+                    resultBox.textContent =
+                        data.message ||
+                        "پاسخی از هوش مصنوعی دریافت نشد.";
+
+                } else {
+
+                    resultBox.textContent =
+                        "درخواست شما دریافت شد.\n\n" +
+                        "این ابزار در حال آماده‌سازی برای اتصال به سرویس مربوطه است.";
+
+                }
+
+                console.log(
+                    "Aluniverse Tool:",
+                    tool.title
+                );
+
+                console.log(
+                    "User Request:",
+                    request
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Aluniverse Error:",
+                    error
+                );
+
+                resultBox.textContent =
+                    "خطا در ارتباط با سرویس.\n\n" +
+                    "لطفاً دوباره تلاش کنید.";
+
+            } finally {
+
+                actionButton.disabled = false;
+                actionButton.textContent = "شروع";
+
+            }
 
         });
-
 
         interfaceBox.appendChild(label);
         interfaceBox.appendChild(textarea);
         interfaceBox.appendChild(actionButton);
         interfaceBox.appendChild(resultBox);
 
-
         toolPage.appendChild(interfaceBox);
     }
-
 
     function openTool(toolKey) {
 
@@ -181,13 +228,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-
         toolIcon.textContent = tool.icon;
 
         toolTitle.textContent = tool.title;
 
         toolDescription.textContent = tool.text;
-
 
         homeHero.style.display = "none";
 
@@ -195,23 +240,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         aboutSection.style.display = "none";
 
-
         toolPage.style.display = "block";
 
-
-        createToolInterface(tool);
-
+        createToolInterface(tool, toolKey);
 
         window.scrollTo({
             top: 0,
             behavior: "smooth"
         });
 
-
-        console.log("Opened tool:", toolKey);
-
+        console.log(
+            "Opened tool:",
+            toolKey
+        );
     }
-
 
     function closeTool() {
 
@@ -223,7 +265,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         aboutSection.style.display = "block";
 
-
         const dynamicInterface =
             document.getElementById("dynamic-tool-interface");
 
@@ -231,14 +272,11 @@ document.addEventListener("DOMContentLoaded", () => {
             dynamicInterface.remove();
         }
 
-
         window.scrollTo({
             top: 0,
             behavior: "smooth"
         });
-
     }
-
 
     cards.forEach((card) => {
 
@@ -253,7 +291,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
-
     if (backButton) {
 
         backButton.addEventListener("click", () => {
@@ -264,10 +301,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
-
     const startButton =
         document.querySelector(".start-button");
-
 
     if (startButton) {
 
@@ -282,7 +317,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
     }
-
 
     console.log(
         "Aluniverse: 6 tools interface activated successfully."
