@@ -17,7 +17,7 @@ app.get("/api/status", (req, res) => {
   res.json({
     success: true,
     service: "Aluniverse Backend",
-    version: "5.1.0",
+    version: "5.2.0",
     groq: Boolean(process.env.GROQ_API_KEY)
   });
 });
@@ -66,7 +66,7 @@ app.post("/api/ai", async (req, res) => {
           "Authorization": "Bearer " + cleanApiKey
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "openai/gpt-oss-20b",
           messages: [
             {
               role: "system",
@@ -108,7 +108,7 @@ app.post("/api/ai", async (req, res) => {
 
     return res.json({
       success: true,
-      answer: answer
+      answer
     });
 
   } catch (error) {
