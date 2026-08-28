@@ -17,7 +17,7 @@ app.get("/api/status", (req, res) => {
   res.json({
     success: true,
     service: "Aluniverse Backend",
-    version: "4.0.0",
+    version: "4.1.0",
     groq: !!process.env.GROQ_API_KEY
   });
 });
@@ -32,7 +32,7 @@ app.get("/api/health", (req, res) => {
 
 app.post("/api/ai", async (req, res) => {
   try {
-    const { message, language } = req.body;
+    const { message } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -41,12 +41,16 @@ app.post("/api/ai", async (req, res) => {
       });
     }
 
-    if (!process.env.GROQ_API_KEY) {
+    const apiKey = process.env.GROQ_API_KEY;
+
+    if (!apiKey) {
       return res.status(500).json({
         success: false,
         error: "GROQ_API_KEY تنظیم نشده است."
       });
     }
+
+    const cleanApiKey = apiKey.trim();
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -54,7 +58,7 @@ app.post("/api/ai", async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+          "Authorization": `Bearer ${cleanApiKey}`
         },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
@@ -78,13 +82,14 @@ app.post("/api/ai", async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("GROQ ERROR:", data);
+      console.error("GROQ ERROR:", {
+        status: response.status,
+        error: data?.error?.message || "Unknown Groq error"
+      });
 
       return res.status(response.status).json({
         success: false,
-        error:
-          data?.error?.message ||
-          "خطا در ارتباط با سرویس هوش مصنوعی."
+        error: data?.error?.message || "خطا در ارتباط با Groq."
       });
     }
 
@@ -94,16 +99,15 @@ app.post("/api/ai", async (req, res) => {
 
     res.json({
       success: true,
-      answer: answer
+      answer
     });
 
   } catch (error) {
-    console.error("AI ERROR:", error);
+    console.error("AI ERROR:", error.message);
 
     res.status(500).json({
       success: false,
-      error: "خطا در ارتباط با سرویس هوش مصنوعی.",
-      details: error.message
+      error: "خطا در ارتباط با سرویس هوش مصنوعی."
     });
   }
 });
