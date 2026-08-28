@@ -145,7 +145,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const tool = tools[toolKey];
 
-        if (!tool) return;
+        if (!tool) {
+            return;
+        }
 
         currentTool = toolKey;
         currentSubtool = null;
@@ -180,7 +182,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             subtoolsContainer.appendChild(button);
-
         });
 
         homeHero.style.display = "none";
@@ -193,6 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
             behavior: "smooth"
         });
 
+        console.log("Opened Aluniverse tool:", toolKey);
     }
 
     function openSubtool(toolKey, subtoolTitle) {
@@ -215,6 +217,32 @@ document.addEventListener("DOMContentLoaded", () => {
             block: "start"
         });
 
+        console.log(
+            "Opened subtool:",
+            subtoolTitle
+        );
+    }
+
+    function buildPrompt(tool, subtool, request, selectedLanguage) {
+
+        return `
+شما موتور هوش مصنوعی پلتفرم Aluniverse هستید.
+
+ابزار اصلی:
+${tool}
+
+زیرمجموعه:
+${subtool}
+
+زبان پاسخ:
+${selectedLanguage}
+
+درخواست کاربر:
+${request}
+
+لطفاً بهترین پاسخ ممکن را متناسب با ابزار و زیرمجموعه انتخاب‌شده ارائه کن.
+پاسخ را واضح، کاربردی، حرفه‌ای و قابل استفاده ارائه بده.
+        `.trim();
     }
 
     async function runTool() {
@@ -224,6 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!request) {
 
             result.style.display = "block";
+
             result.textContent =
                 "لطفاً ابتدا درخواست خود را وارد کنید.";
 
@@ -231,46 +260,64 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         runButton.disabled = true;
-        runButton.textContent = "در حال دریافت پاسخ...";
+        runButton.textContent = "در حال پردازش...";
 
         result.style.display = "block";
         result.textContent =
-            "🤖 Aluniverse در حال پردازش درخواست شماست...";
+            "🤖 Aluniverse در حال پردازش درخواست شما است...";
 
         try {
 
+            const prompt = buildPrompt(
+                tools[currentTool].title,
+                currentSubtool,
+                request,
+                language.value
+            );
+
             const response = await fetch("/api/ai", {
+
                 method: "POST",
+
                 headers: {
                     "Content-Type": "application/json"
                 },
+
                 body: JSON.stringify({
-                    message:
-                        "ابزار: " +
-                        tools[currentTool].title +
-                        "\nبخش: " +
-                        currentSubtool +
-                        "\nزبان: " +
-                        language.value +
-                        "\n\nدرخواست کاربر:\n" +
-                        request
+                    message: prompt
                 })
+
             });
 
             const data = await response.json();
 
             if (!response.ok || !data.success) {
+
                 throw new Error(
-                    data.error || "خطا در دریافت پاسخ"
+                    data.error ||
+                    "خطا در دریافت پاسخ از هوش مصنوعی."
                 );
             }
 
             result.textContent =
-                data.answer || "پاسخی دریافت نشد.";
+                data.answer ||
+                "پاسخی از هوش مصنوعی دریافت نشد.";
+
+            console.log(
+                "Aluniverse AI Result:",
+                {
+                    tool: currentTool,
+                    subtool: currentSubtool,
+                    language: language.value
+                }
+            );
 
         } catch (error) {
 
-            console.error("AI ERROR:", error);
+            console.error(
+                "Aluniverse AI Error:",
+                error
+            );
 
             result.textContent =
                 "❌ خطا در ارتباط با هوش مصنوعی\n\n" +
@@ -279,9 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } finally {
 
             runButton.disabled = false;
-            runButton.textContent =
-                "ارسال به هوش مصنوعی";
-
+            runButton.textContent = "ارسال به هوش مصنوعی";
         }
     }
 
@@ -293,13 +338,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 card.getAttribute("data-tool");
 
             openTool(toolKey);
-
         });
-
     });
 
     if (runButton) {
-        runButton.addEventListener("click", runTool);
+
+        runButton.addEventListener(
+            "click",
+            runTool
+        );
     }
 
     if (backButton) {
@@ -319,9 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 top: 0,
                 behavior: "smooth"
             });
-
         });
-
     }
 
     const startButton =
@@ -336,13 +381,11 @@ document.addEventListener("DOMContentLoaded", () => {
             features.scrollIntoView({
                 behavior: "smooth"
             });
-
         });
-
     }
 
     console.log(
-        "Aluniverse: 6 main tools + full subtools activated."
+        "Aluniverse: 6 main tools + all subtools + real AI connection activated."
     );
 
 });
