@@ -1,8 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+
   const tools = {
     ai: {
       icon: "🤖",
       title: "هوش مصنوعی",
+      description: "دستیار، تحقیق، تحلیل، ترجمه و ابزارهای هوشمند",
       subtools: [
         { name: "چت هوشمند", type: "chat" },
         { name: "پرسش و پاسخ", type: "chat" },
@@ -13,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     image: {
       icon: "🎨",
       title: "تولید تصویر",
+      description: "تصویر، لوگو، پوستر، بنر و طراحی خلاقانه",
       subtools: [
         { name: "تولید تصویر با متن", type: "placeholder" },
         { name: "ویرایش تصویر", type: "placeholder" },
@@ -23,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     video: {
       icon: "🎬",
       title: "ویدئو و انیمیشن",
+      description: "ویدئو، Reels، Shorts، انیمیشن و تیزر",
       subtools: [
         { name: "تولید ویدئو", type: "placeholder" },
         { name: "ساخت انیمیشن", type: "placeholder" },
@@ -33,17 +37,19 @@ document.addEventListener("DOMContentLoaded", () => {
     content: {
       icon: "✍️",
       title: "تولید محتوا",
+      description: "مقاله، کتاب، پادکست، کمپین و محتوای ویروسی",
       subtools: [
         { name: "مقاله", type: "placeholder" },
         { name: "کتاب", type: "placeholder" },
         { name: "پادکست", type: "placeholder" },
-        { name: "تبلیغات", type: "placeholder" }
+        { name: "کمپین و تبلیغات", type: "placeholder" }
       ]
     },
 
     web: {
       icon: "🌐",
-      title: "طراحی وب",
+      title: "طراحی وب و نرم‌افزار",
+      description: "سایت، اپلیکیشن، UI/UX، API و توسعه نرم‌افزار",
       subtools: [
         { name: "ساخت سایت", type: "placeholder" },
         { name: "طراحی صفحه", type: "placeholder" },
@@ -54,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     execute: {
       icon: "🚀",
       title: "از ایده تا اجرا",
+      description: "تبدیل ایده به پروژه، کسب‌وکار و مسیر اجرایی",
       subtools: [
         { name: "تبدیل ایده به پروژه", type: "placeholder" },
         { name: "برنامه‌ریزی پروژه", type: "placeholder" },
@@ -62,229 +69,205 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const container =
-    document.getElementById("tools") ||
-    document.getElementById("app") ||
-    document.body;
+  const cards = document.querySelectorAll(".card");
 
-  function createButton(text, className = "") {
-    const button = document.createElement("button");
-    button.textContent = text;
-    button.className = className;
-    return button;
-  }
+  const homeHero = document.getElementById("home-hero");
+  const features = document.getElementById("features");
+  const aboutSection = document.getElementById("about-section");
+  const toolPage = document.getElementById("tool-page");
 
-  function clearContainer() {
-    container.innerHTML = "";
-  }
+  const toolIcon = document.getElementById("tool-icon");
+  const toolTitle = document.getElementById("tool-title");
+  const toolDescription = document.getElementById("tool-description");
+  const subtoolsContainer = document.getElementById("subtools");
 
-  function showTools() {
-    clearContainer();
+  const workspace = document.getElementById("workspace");
+  const workspaceTitle = document.getElementById("workspace-title");
+  const userInput = document.getElementById("user-input");
+  const language = document.getElementById("language");
+  const runButton = document.getElementById("run-button");
+  const result = document.getElementById("result");
+  const backHome = document.getElementById("back-home");
 
-    const title = document.createElement("h2");
-    title.textContent = "Aluniverse";
-    container.appendChild(title);
+  let currentTool = null;
+  let currentSubtool = null;
 
-    const grid = document.createElement("div");
-    grid.className = "tools-grid";
+  cards.forEach(card => {
+    card.addEventListener("click", () => {
+      const key = card.dataset.tool;
 
-    Object.entries(tools).forEach(([key, tool]) => {
-      const button = createButton(
-        `${tool.icon} ${tool.title}`,
-        "tool-button"
-      );
-
-      button.addEventListener("click", () => {
-        showSubTools(key, tool);
-      });
-
-      grid.appendChild(button);
-    });
-
-    container.appendChild(grid);
-  }
-
-  function showSubTools(key, tool) {
-    clearContainer();
-
-    const title = document.createElement("h2");
-    title.textContent = `${tool.icon} ${tool.title}`;
-    container.appendChild(title);
-
-    const list = document.createElement("div");
-    list.className = "subtools";
-
-    tool.subtools.forEach((subtool) => {
-      const button = createButton(
-        subtool.name,
-        "subtool-button"
-      );
-
-      button.addEventListener("click", () => {
-        if (subtool.type === "chat") {
-          showChat(subtool.name);
-        } else {
-          showPlaceholder(subtool.name);
-        }
-      });
-
-      list.appendChild(button);
-    });
-
-    container.appendChild(list);
-
-    const back = createButton("⬅️ بازگشت", "back-button");
-    back.addEventListener("click", showTools);
-    container.appendChild(back);
-  }
-
-  function showChat(titleText) {
-    clearContainer();
-
-    const title = document.createElement("h2");
-    title.textContent = `🤖 ${titleText}`;
-    container.appendChild(title);
-
-    const chatBox = document.createElement("div");
-    chatBox.id = "chatBox";
-    chatBox.className = "chat-box";
-    container.appendChild(chatBox);
-
-    const input = document.createElement("textarea");
-    input.id = "aiInput";
-    input.placeholder = "درخواست خود را بنویسید...";
-    input.className = "ai-input";
-    container.appendChild(input);
-
-    const sendButton = createButton(
-      "ارسال",
-      "send-button"
-    );
-    container.appendChild(sendButton);
-
-    const back = createButton(
-      "⬅️ بازگشت",
-      "back-button"
-    );
-    container.appendChild(back);
-
-    back.addEventListener("click", () => {
-      showSubTools("ai", tools.ai);
-    });
-
-    sendButton.addEventListener("click", sendMessage);
-
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
+      if (tools[key]) {
+        openTool(key);
       }
     });
+  });
+
+  function openTool(key) {
+    const tool = tools[key];
+
+    if (!tool) return;
+
+    currentTool = key;
+
+    homeHero.style.display = "none";
+    features.style.display = "none";
+    aboutSection.style.display = "none";
+
+    toolPage.style.display = "block";
+
+    toolIcon.textContent = tool.icon;
+    toolTitle.textContent = tool.title;
+    toolDescription.textContent = tool.description;
+
+    workspace.style.display = "none";
+    result.style.display = "none";
+    result.textContent = "";
+
+    subtoolsContainer.innerHTML = "";
+
+    tool.subtools.forEach(subtool => {
+
+      const button = document.createElement("div");
+      button.className = "subtool";
+
+      const icon = document.createElement("span");
+      icon.className = "subtool-icon";
+
+      const title = document.createElement("span");
+      title.className = "subtool-title";
+      title.textContent = subtool.name;
+
+      if (subtool.type === "chat") {
+        icon.textContent = "💬";
+      } else {
+        icon.textContent = "✨";
+      }
+
+      button.appendChild(icon);
+      button.appendChild(title);
+
+      button.addEventListener("click", () => {
+        openSubtool(subtool);
+      });
+
+      subtoolsContainer.appendChild(button);
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
   }
 
-  async function sendMessage() {
-    const input = document.getElementById("aiInput");
-    const chatBox = document.getElementById("chatBox");
+  function openSubtool(subtool) {
 
-    if (!input || !chatBox) return;
+    currentSubtool = subtool;
 
-    const message = input.value.trim();
+    workspace.style.display = "block";
+
+    workspaceTitle.textContent = subtool.name;
+
+    userInput.value = "";
+    result.style.display = "none";
+    result.textContent = "";
+
+    if (subtool.type === "chat") {
+      userInput.placeholder =
+        "پیام خود را بنویسید؛ هوش مصنوعی پاسخ خواهد داد...";
+
+      runButton.textContent = "ارسال به هوش مصنوعی";
+    } else {
+      userInput.placeholder =
+        "درخواست یا توضیحات خود را اینجا بنویسید...";
+
+      runButton.textContent = "اجرای آزمایشی";
+    }
+
+    workspace.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  runButton.addEventListener("click", async () => {
+
+    const message = userInput.value.trim();
 
     if (!message) {
+      result.style.display = "block";
+      result.textContent = "لطفاً ابتدا درخواست خود را وارد کنید.";
       return;
     }
 
-    addMessage(chatBox, "شما", message);
+    if (!currentSubtool) return;
 
-    input.value = "";
-    input.disabled = true;
+    if (currentSubtool.type !== "chat") {
+      result.style.display = "block";
+      result.textContent =
+        "این ابزار در حال آماده‌سازی برای اتصال به سرویس واقعی است.";
+      return;
+    }
 
-    const loading = document.createElement("div");
-    loading.className = "ai-loading";
-    loading.textContent = "🤖 در حال دریافت پاسخ از هوش مصنوعی...";
-    chatBox.appendChild(loading);
+    runButton.disabled = true;
+    runButton.textContent = "در حال دریافت پاسخ...";
+
+    result.style.display = "block";
+    result.textContent = "🤖 در حال ارتباط با هوش مصنوعی...";
 
     try {
+
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          message: message
+          message: message,
+          language: language.value
         })
       });
 
       const data = await response.json();
 
-      loading.remove();
-
       if (!response.ok || !data.success) {
         throw new Error(
-          data.error || "خطا در دریافت پاسخ"
+          data.error || "خطا در ارتباط با هوش مصنوعی"
         );
       }
 
-      addMessage(
-        chatBox,
-        "Aluniverse AI",
-        data.answer
-      );
+      result.textContent =
+        data.answer || "پاسخی از هوش مصنوعی دریافت نشد.";
 
     } catch (error) {
-      loading.remove();
-
-      addMessage(
-        chatBox,
-        "خطا",
-        `❌ ${error.message}`
-      );
 
       console.error("AI ERROR:", error);
 
-    } finally {
-      input.disabled = false;
-      input.focus();
+      result.textContent =
+        "❌ خطا در ارتباط با هوش مصنوعی\n\n" +
+        error.message;
     }
-  }
 
-  function addMessage(chatBox, sender, text) {
-    const message = document.createElement("div");
-    message.className = "chat-message";
+    runButton.disabled = false;
+    runButton.textContent = "ارسال به هوش مصنوعی";
+  });
 
-    const senderElement = document.createElement("strong");
-    senderElement.textContent = `${sender}: `;
+  backHome.addEventListener("click", () => {
 
-    const textElement = document.createElement("span");
-    textElement.textContent = text;
+    toolPage.style.display = "none";
 
-    message.appendChild(senderElement);
-    message.appendChild(textElement);
+    homeHero.style.display = "block";
+    features.style.display = "grid";
+    aboutSection.style.display = "block";
 
-    chatBox.appendChild(message);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
+    workspace.style.display = "none";
 
-  function showPlaceholder(titleText) {
-    clearContainer();
+    currentTool = null;
+    currentSubtool = null;
 
-    const title = document.createElement("h2");
-    title.textContent = titleText;
-    container.appendChild(title);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  });
 
-    const message = document.createElement("p");
-    message.textContent =
-      "این ابزار در حال آماده‌سازی برای اتصال به سرویس واقعی است.";
-    container.appendChild(message);
-
-    const back = createButton(
-      "⬅️ بازگشت",
-      "back-button"
-    );
-
-    back.addEventListener("click", showTools);
-    container.appendChild(back);
-  }
-
-  showTools();
 });
