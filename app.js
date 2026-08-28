@@ -5,46 +5,118 @@ document.addEventListener("DOMContentLoaded", () => {
         ai: {
             icon: "🤖",
             title: "هوش مصنوعی",
-            text: "با هوش مصنوعی Aluniverse گفتگو کن، سؤال بپرس و پاسخ دریافت کن.",
-            placeholder: "سؤال یا درخواست خود را بنویسید..."
+            text: "دستیار هوشمند Aluniverse برای گفتگو، تحقیق، تحلیل و انجام وظایف.",
+            subtools: [
+                ["💬", "چت هوشمند"],
+                ["💡", "ایده‌پردازی"],
+                ["🔎", "تحقیق و تحلیل"],
+                ["🌍", "ترجمه"],
+                ["📄", "تحلیل فایل و سند"],
+                ["🎯", "مهندسی Prompt"],
+                ["🤖", "دستیار تخصصی"],
+                ["⚙️", "اتوماسیون"]
+            ]
         },
 
         image: {
             icon: "🎨",
             title: "تولید تصویر",
-            text: "ایده خود را توصیف کن تا آماده تولید تصویر شود.",
-            placeholder: "تصویر موردنظر خود را توصیف کنید..."
+            text: "تولید و ویرایش تصاویر و طراحی‌های خلاقانه.",
+            subtools: [
+                ["🖼️", "تولید تصویر"],
+                ["✏️", "ویرایش تصویر"],
+                ["🔄", "تغییر سبک"],
+                ["✨", "ارتقای کیفیت"],
+                ["🧹", "حذف پس‌زمینه"],
+                ["🏷️", "طراحی لوگو"],
+                ["📢", "پوستر و بنر"],
+                ["📚", "جلد کتاب"],
+                ["📱", "محتوای شبکه اجتماعی"],
+                ["📊", "اینفوگرافیک"]
+            ]
         },
 
         video: {
             icon: "🎬",
             title: "ویدئو و انیمیشن",
-            text: "ایده ویدئو یا انیمیشن خود را وارد کن.",
-            placeholder: "ویدئو یا انیمیشن موردنظر خود را توضیح دهید..."
+            text: "ساخت و آماده‌سازی انواع محتوای ویدئویی.",
+            subtools: [
+                ["🎥", "تولید ویدئو"],
+                ["📱", "Reels"],
+                ["▶️", "Shorts"],
+                ["🎞️", "انیمیشن"],
+                ["📝", "متن به ویدئو"],
+                ["🖼️", "تصویر به ویدئو"],
+                ["🎙️", "دوبله"],
+                ["💬", "زیرنویس"],
+                ["📢", "تیزر تبلیغاتی"],
+                ["✂️", "تدوین ویدئو"]
+            ]
         },
 
         content: {
             icon: "✍️",
             title: "تولید محتوا",
-            text: "مقاله، کتاب، متن تبلیغاتی و محتوای حرفه‌ای ایجاد کن.",
-            placeholder: "موضوع محتوای خود را وارد کنید..."
+            text: "تولید محتوای متنی، صوتی، تبلیغاتی و شبکه‌های اجتماعی.",
+            subtools: [
+                ["📝", "مقاله"],
+                ["📖", "کتاب و داستان"],
+                ["🎙️", "پادکست"],
+                ["🎬", "سناریو"],
+                ["🔥", "محتوای ویروسی"],
+                ["📢", "کمپین"],
+                ["🔍", "SEO"],
+                ["📱", "شبکه‌های اجتماعی"],
+                ["✉️", "محتوای ایمیلی"],
+                ["📣", "متن تبلیغاتی"],
+                ["📅", "تقویم محتوا"],
+                ["🌍", "محتوای چندزبانه"]
+            ]
         },
 
         web: {
             icon: "🌐",
-            title: "طراحی وب",
-            text: "ایده وب‌سایت خود را وارد کن و ساختار اولیه آن را دریافت کن.",
-            placeholder: "وب‌سایت موردنظر خود را توضیح دهید..."
+            title: "طراحی وب و نرم‌افزار",
+            text: "طراحی، توسعه و آماده‌سازی محصولات دیجیتال.",
+            subtools: [
+                ["🌐", "ساخت وب‌سایت"],
+                ["📄", "Landing Page"],
+                ["🛒", "فروشگاه اینترنتی"],
+                ["📱", "اپلیکیشن"],
+                ["🎨", "UI/UX"],
+                ["💻", "تولید کد"],
+                ["🔌", "ساخت API"],
+                ["🗄️", "Database"],
+                ["🧪", "تست و Debug"],
+                ["🚀", "Deploy و انتشار"],
+                ["⚙️", "اتوماسیون"],
+                ["🔧", "نگهداری و به‌روزرسانی"]
+            ]
         },
 
         execute: {
             icon: "🚀",
             title: "از ایده تا اجرا",
-            text: "ایده خود را مرحله‌به‌مرحله به یک پروژه قابل اجرا تبدیل کن.",
-            placeholder: "ایده پروژه خود را وارد کنید..."
+            text: "ایده خود را مرحله‌به‌مرحله به یک پروژه واقعی تبدیل کنید.",
+            subtools: [
+                ["💡", "تبدیل ایده به پروژه"],
+                ["🔎", "تحقیقات بازار"],
+                ["✅", "اعتبارسنجی ایده"],
+                ["📋", "برنامه‌ریزی"],
+                ["💼", "مدل کسب‌وکار"],
+                ["🏷️", "برندسازی"],
+                ["📣", "بازاریابی"],
+                ["📢", "کمپین"],
+                ["💰", "فروش و درآمد"],
+                ["🎓", "آموزش"],
+                ["📊", "تحلیل عملکرد"],
+                ["📈", "رشد و توسعه"],
+                ["⚙️", "اتوماسیون کسب‌وکار"]
+            ]
         }
 
     };
+
 
     const cards = document.querySelectorAll(".card[data-tool]");
 
@@ -57,168 +129,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const toolTitle = document.getElementById("tool-title");
     const toolDescription = document.getElementById("tool-description");
 
+    const subtoolsContainer = document.getElementById("subtools");
+    const workspace = document.getElementById("workspace");
+    const workspaceTitle = document.getElementById("workspace-title");
+    const userInput = document.getElementById("user-input");
+    const language = document.getElementById("language");
+    const runButton = document.getElementById("run-button");
+    const result = document.getElementById("result");
+
     const backButton = document.getElementById("back-home");
 
-    function createToolInterface(tool, toolKey) {
 
-        const oldInterface = document.getElementById("dynamic-tool-interface");
+    let currentTool = null;
+    let currentSubtool = null;
 
-        if (oldInterface) {
-            oldInterface.remove();
-        }
-
-        const interfaceBox = document.createElement("div");
-
-        interfaceBox.id = "dynamic-tool-interface";
-
-        interfaceBox.style.maxWidth = "800px";
-        interfaceBox.style.margin = "20px auto 0";
-        interfaceBox.style.textAlign = "right";
-
-        const label = document.createElement("label");
-
-        label.textContent = "درخواست خود را وارد کنید";
-
-        label.style.display = "block";
-        label.style.marginBottom = "10px";
-        label.style.fontWeight = "bold";
-        label.style.color = "#39209b";
-
-        const textarea = document.createElement("textarea");
-
-        textarea.placeholder = tool.placeholder;
-
-        textarea.style.width = "100%";
-        textarea.style.minHeight = "150px";
-        textarea.style.padding = "15px";
-        textarea.style.border = "2px solid #e3def5";
-        textarea.style.borderRadius = "15px";
-        textarea.style.fontSize = "16px";
-        textarea.style.resize = "vertical";
-        textarea.style.direction = "rtl";
-        textarea.style.outline = "none";
-
-        const actionButton = document.createElement("button");
-
-        actionButton.textContent = "شروع";
-
-        actionButton.style.display = "block";
-        actionButton.style.margin = "15px auto";
-        actionButton.style.border = "none";
-        actionButton.style.borderRadius = "30px";
-        actionButton.style.background = "#5b35d5";
-        actionButton.style.color = "white";
-        actionButton.style.padding = "14px 40px";
-        actionButton.style.fontSize = "18px";
-        actionButton.style.fontWeight = "bold";
-        actionButton.style.cursor = "pointer";
-
-        const resultBox = document.createElement("div");
-
-        resultBox.style.display = "none";
-        resultBox.style.marginTop = "20px";
-        resultBox.style.padding = "20px";
-        resultBox.style.background = "#f7f4ff";
-        resultBox.style.borderRadius = "15px";
-        resultBox.style.color = "#39209b";
-        resultBox.style.whiteSpace = "pre-wrap";
-        resultBox.style.lineHeight = "2";
-
-        actionButton.addEventListener("click", async () => {
-
-            const request = textarea.value.trim();
-
-            if (!request) {
-
-                resultBox.style.display = "block";
-
-                resultBox.textContent =
-                    "لطفاً ابتدا درخواست خود را وارد کنید.";
-
-                return;
-            }
-
-            actionButton.disabled = true;
-            actionButton.textContent = "در حال پردازش...";
-
-            resultBox.style.display = "block";
-
-            resultBox.textContent =
-                "در حال ارتباط با هوش مصنوعی Aluniverse...";
-
-            try {
-
-                if (toolKey === "ai") {
-
-                    const response = await fetch("/api/ai", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            message: request
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok || !data.success) {
-
-                        throw new Error(
-                            data.error ||
-                            "ارتباط با هوش مصنوعی برقرار نشد."
-                        );
-                    }
-
-                    resultBox.textContent =
-                        data.message ||
-                        "پاسخی از هوش مصنوعی دریافت نشد.";
-
-                } else {
-
-                    resultBox.textContent =
-                        "درخواست شما دریافت شد.\n\n" +
-                        "این ابزار در حال آماده‌سازی برای اتصال به سرویس مربوطه است.";
-
-                }
-
-                console.log(
-                    "Aluniverse Tool:",
-                    tool.title
-                );
-
-                console.log(
-                    "User Request:",
-                    request
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Aluniverse Error:",
-                    error
-                );
-
-                resultBox.textContent =
-                    "خطا در ارتباط با سرویس.\n\n" +
-                    "لطفاً دوباره تلاش کنید.";
-
-            } finally {
-
-                actionButton.disabled = false;
-                actionButton.textContent = "شروع";
-
-            }
-
-        });
-
-        interfaceBox.appendChild(label);
-        interfaceBox.appendChild(textarea);
-        interfaceBox.appendChild(actionButton);
-        interfaceBox.appendChild(resultBox);
-
-        toolPage.appendChild(interfaceBox);
-    }
 
     function openTool(toolKey) {
 
@@ -228,55 +152,185 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        currentTool = toolKey;
+        currentSubtool = null;
+
         toolIcon.textContent = tool.icon;
-
         toolTitle.textContent = tool.title;
-
         toolDescription.textContent = tool.text;
 
+        subtoolsContainer.innerHTML = "";
+
+        workspace.style.display = "none";
+        result.style.display = "none";
+        result.textContent = "";
+        userInput.value = "";
+
+        tool.subtools.forEach((subtool) => {
+
+            const icon = subtool[0];
+            const title = subtool[1];
+
+            const button = document.createElement("div");
+
+            button.className = "subtool";
+
+            button.innerHTML = `
+                <span class="subtool-icon">${icon}</span>
+                <span class="subtool-title">${title}</span>
+            `;
+
+            button.addEventListener("click", () => {
+
+                openSubtool(toolKey, title);
+
+            });
+
+            subtoolsContainer.appendChild(button);
+
+        });
+
+
         homeHero.style.display = "none";
-
         features.style.display = "none";
-
         aboutSection.style.display = "none";
-
         toolPage.style.display = "block";
 
-        createToolInterface(tool, toolKey);
 
         window.scrollTo({
             top: 0,
             behavior: "smooth"
+        });
+
+
+        console.log("Opened Aluniverse tool:", toolKey);
+
+    }
+
+
+    function openSubtool(toolKey, subtoolTitle) {
+
+        currentTool = toolKey;
+        currentSubtool = subtoolTitle;
+
+        workspaceTitle.textContent =
+            tools[toolKey].icon +
+            " " +
+            subtoolTitle;
+
+        userInput.value = "";
+
+        result.style.display = "none";
+        result.textContent = "";
+
+        workspace.style.display = "block";
+
+        workspace.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
         });
 
         console.log(
-            "Opened tool:",
-            toolKey
+            "Opened subtool:",
+            subtoolTitle
         );
+
     }
 
-    function closeTool() {
 
-        toolPage.style.display = "none";
+    async function runTool() {
 
-        homeHero.style.display = "block";
+        const request = userInput.value.trim();
 
-        features.style.display = "grid";
+        if (!request) {
 
-        aboutSection.style.display = "block";
+            result.style.display = "block";
 
-        const dynamicInterface =
-            document.getElementById("dynamic-tool-interface");
+            result.textContent =
+                "لطفاً ابتدا درخواست خود را وارد کنید.";
 
-        if (dynamicInterface) {
-            dynamicInterface.remove();
+            return;
         }
 
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+
+        runButton.disabled = true;
+
+        runButton.textContent =
+            "در حال پردازش آزمایشی...";
+
+
+        result.style.display = "block";
+
+        result.textContent =
+            "Aluniverse در حال آماده‌سازی نتیجه آزمایشی است...";
+
+
+        try {
+
+            /*
+             * در این مرحله هنوز به OpenAI متصل نمی‌شویم.
+             * هدف، تست کامل مسیر ابزارها بدون پرداخت API است.
+             */
+
+            await new Promise(resolve => {
+                setTimeout(resolve, 900);
+            });
+
+
+            result.textContent =
+                "✅ اجرای آزمایشی با موفقیت انجام شد.\n\n" +
+
+                "ابزار: " +
+                tools[currentTool].title +
+                "\n" +
+
+                "بخش: " +
+                currentSubtool +
+                "\n\n" +
+
+                "درخواست شما:\n" +
+                request +
+                "\n\n" +
+
+                "زبان انتخاب‌شده: " +
+                language.value +
+                "\n\n" +
+
+                "این مرحله آزمایشی است و هنوز به سرویس AI واقعی متصل نشده است.";
+
+
+            console.log(
+                "Aluniverse Test Result:",
+                {
+                    tool: currentTool,
+                    subtool: currentSubtool,
+                    request: request,
+                    language: language.value
+                }
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Aluniverse Error:",
+                error
+            );
+
+            result.textContent =
+                "خطایی در اجرای آزمایشی رخ داد.";
+
+        } finally {
+
+            runButton.disabled = false;
+
+            runButton.textContent =
+                "اجرای آزمایشی";
+
+        }
+
     }
+
 
     cards.forEach((card) => {
 
@@ -291,18 +345,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
+
+    if (runButton) {
+
+        runButton.addEventListener(
+            "click",
+            runTool
+        );
+
+    }
+
+
     if (backButton) {
 
         backButton.addEventListener("click", () => {
 
-            closeTool();
+            toolPage.style.display = "none";
+
+            homeHero.style.display = "block";
+            features.style.display = "grid";
+            aboutSection.style.display = "block";
+
+            workspace.style.display = "none";
+
+            result.style.display = "none";
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
 
         });
 
     }
 
+
     const startButton =
         document.querySelector(".start-button");
+
 
     if (startButton) {
 
@@ -318,8 +398,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+
     console.log(
-        "Aluniverse: 6 tools interface activated successfully."
+        "Aluniverse: 6 main tools + subtools activated."
     );
 
 });
