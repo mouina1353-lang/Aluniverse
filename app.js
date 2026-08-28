@@ -1,406 +1,290 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const tools = {
+    ai: {
+      icon: "🤖",
+      title: "هوش مصنوعی",
+      subtools: [
+        { name: "چت هوشمند", type: "chat" },
+        { name: "پرسش و پاسخ", type: "chat" },
+        { name: "دستیار هوشمند", type: "chat" }
+      ]
+    },
 
-    const tools = {
+    image: {
+      icon: "🎨",
+      title: "تولید تصویر",
+      subtools: [
+        { name: "تولید تصویر با متن", type: "placeholder" },
+        { name: "ویرایش تصویر", type: "placeholder" },
+        { name: "تبدیل سبک تصویر", type: "placeholder" }
+      ]
+    },
 
-        ai: {
-            icon: "🤖",
-            title: "هوش مصنوعی",
-            text: "دستیار هوشمند Aluniverse برای گفتگو، تحقیق، تحلیل و انجام وظایف.",
-            subtools: [
-                ["💬", "چت هوشمند"],
-                ["💡", "ایده‌پردازی"],
-                ["🔎", "تحقیق و تحلیل"],
-                ["🌍", "ترجمه"],
-                ["📄", "تحلیل فایل و سند"],
-                ["🎯", "مهندسی Prompt"],
-                ["🤖", "دستیار تخصصی"],
-                ["⚙️", "اتوماسیون"]
-            ]
-        },
+    video: {
+      icon: "🎬",
+      title: "ویدئو و انیمیشن",
+      subtools: [
+        { name: "تولید ویدئو", type: "placeholder" },
+        { name: "ساخت انیمیشن", type: "placeholder" },
+        { name: "ویرایش ویدئو", type: "placeholder" }
+      ]
+    },
 
-        image: {
-            icon: "🎨",
-            title: "تولید تصویر",
-            text: "تولید و ویرایش تصاویر و طراحی‌های خلاقانه.",
-            subtools: [
-                ["🖼️", "تولید تصویر"],
-                ["✏️", "ویرایش تصویر"],
-                ["🔄", "تغییر سبک"],
-                ["✨", "ارتقای کیفیت"],
-                ["🧹", "حذف پس‌زمینه"],
-                ["🏷️", "طراحی لوگو"],
-                ["📢", "پوستر و بنر"],
-                ["📚", "جلد کتاب"],
-                ["📱", "محتوای شبکه اجتماعی"],
-                ["📊", "اینفوگرافیک"]
-            ]
-        },
+    content: {
+      icon: "✍️",
+      title: "تولید محتوا",
+      subtools: [
+        { name: "مقاله", type: "placeholder" },
+        { name: "کتاب", type: "placeholder" },
+        { name: "پادکست", type: "placeholder" },
+        { name: "تبلیغات", type: "placeholder" }
+      ]
+    },
 
-        video: {
-            icon: "🎬",
-            title: "ویدئو و انیمیشن",
-            text: "ساخت و آماده‌سازی انواع محتوای ویدئویی.",
-            subtools: [
-                ["🎥", "تولید ویدئو"],
-                ["📱", "Reels"],
-                ["▶️", "Shorts"],
-                ["🎞️", "انیمیشن"],
-                ["📝", "متن به ویدئو"],
-                ["🖼️", "تصویر به ویدئو"],
-                ["🎙️", "دوبله"],
-                ["💬", "زیرنویس"],
-                ["📢", "تیزر تبلیغاتی"],
-                ["✂️", "تدوین ویدئو"]
-            ]
-        },
+    web: {
+      icon: "🌐",
+      title: "طراحی وب",
+      subtools: [
+        { name: "ساخت سایت", type: "placeholder" },
+        { name: "طراحی صفحه", type: "placeholder" },
+        { name: "تولید کد", type: "placeholder" }
+      ]
+    },
 
-        content: {
-            icon: "✍️",
-            title: "تولید محتوا",
-            text: "تولید محتوای متنی، صوتی، تبلیغاتی و شبکه‌های اجتماعی.",
-            subtools: [
-                ["📝", "مقاله"],
-                ["📖", "کتاب و داستان"],
-                ["🎙️", "پادکست"],
-                ["🎬", "سناریو"],
-                ["🔥", "محتوای ویروسی"],
-                ["📢", "کمپین"],
-                ["🔍", "SEO"],
-                ["📱", "شبکه‌های اجتماعی"],
-                ["✉️", "محتوای ایمیلی"],
-                ["📣", "متن تبلیغاتی"],
-                ["📅", "تقویم محتوا"],
-                ["🌍", "محتوای چندزبانه"]
-            ]
-        },
-
-        web: {
-            icon: "🌐",
-            title: "طراحی وب و نرم‌افزار",
-            text: "طراحی، توسعه و آماده‌سازی محصولات دیجیتال.",
-            subtools: [
-                ["🌐", "ساخت وب‌سایت"],
-                ["📄", "Landing Page"],
-                ["🛒", "فروشگاه اینترنتی"],
-                ["📱", "اپلیکیشن"],
-                ["🎨", "UI/UX"],
-                ["💻", "تولید کد"],
-                ["🔌", "ساخت API"],
-                ["🗄️", "Database"],
-                ["🧪", "تست و Debug"],
-                ["🚀", "Deploy و انتشار"],
-                ["⚙️", "اتوماسیون"],
-                ["🔧", "نگهداری و به‌روزرسانی"]
-            ]
-        },
-
-        execute: {
-            icon: "🚀",
-            title: "از ایده تا اجرا",
-            text: "ایده خود را مرحله‌به‌مرحله به یک پروژه واقعی تبدیل کنید.",
-            subtools: [
-                ["💡", "تبدیل ایده به پروژه"],
-                ["🔎", "تحقیقات بازار"],
-                ["✅", "اعتبارسنجی ایده"],
-                ["📋", "برنامه‌ریزی"],
-                ["💼", "مدل کسب‌وکار"],
-                ["🏷️", "برندسازی"],
-                ["📣", "بازاریابی"],
-                ["📢", "کمپین"],
-                ["💰", "فروش و درآمد"],
-                ["🎓", "آموزش"],
-                ["📊", "تحلیل عملکرد"],
-                ["📈", "رشد و توسعه"],
-                ["⚙️", "اتوماسیون کسب‌وکار"]
-            ]
-        }
-
-    };
-
-
-    const cards = document.querySelectorAll(".card[data-tool]");
-
-    const homeHero = document.getElementById("home-hero");
-    const features = document.getElementById("features");
-    const aboutSection = document.getElementById("about-section");
-
-    const toolPage = document.getElementById("tool-page");
-    const toolIcon = document.getElementById("tool-icon");
-    const toolTitle = document.getElementById("tool-title");
-    const toolDescription = document.getElementById("tool-description");
-
-    const subtoolsContainer = document.getElementById("subtools");
-    const workspace = document.getElementById("workspace");
-    const workspaceTitle = document.getElementById("workspace-title");
-    const userInput = document.getElementById("user-input");
-    const language = document.getElementById("language");
-    const runButton = document.getElementById("run-button");
-    const result = document.getElementById("result");
-
-    const backButton = document.getElementById("back-home");
-
-
-    let currentTool = null;
-    let currentSubtool = null;
-
-
-    function openTool(toolKey) {
-
-        const tool = tools[toolKey];
-
-        if (!tool) {
-            return;
-        }
-
-        currentTool = toolKey;
-        currentSubtool = null;
-
-        toolIcon.textContent = tool.icon;
-        toolTitle.textContent = tool.title;
-        toolDescription.textContent = tool.text;
-
-        subtoolsContainer.innerHTML = "";
-
-        workspace.style.display = "none";
-        result.style.display = "none";
-        result.textContent = "";
-        userInput.value = "";
-
-        tool.subtools.forEach((subtool) => {
-
-            const icon = subtool[0];
-            const title = subtool[1];
-
-            const button = document.createElement("div");
-
-            button.className = "subtool";
-
-            button.innerHTML = `
-                <span class="subtool-icon">${icon}</span>
-                <span class="subtool-title">${title}</span>
-            `;
-
-            button.addEventListener("click", () => {
-
-                openSubtool(toolKey, title);
-
-            });
-
-            subtoolsContainer.appendChild(button);
-
-        });
-
-
-        homeHero.style.display = "none";
-        features.style.display = "none";
-        aboutSection.style.display = "none";
-        toolPage.style.display = "block";
-
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-
-
-        console.log("Opened Aluniverse tool:", toolKey);
-
+    execute: {
+      icon: "🚀",
+      title: "از ایده تا اجرا",
+      subtools: [
+        { name: "تبدیل ایده به پروژه", type: "placeholder" },
+        { name: "برنامه‌ریزی پروژه", type: "placeholder" },
+        { name: "اجرای خودکار", type: "placeholder" }
+      ]
     }
+  };
 
+  const container =
+    document.getElementById("tools") ||
+    document.getElementById("app") ||
+    document.body;
 
-    function openSubtool(toolKey, subtoolTitle) {
+  function createButton(text, className = "") {
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.className = className;
+    return button;
+  }
 
-        currentTool = toolKey;
-        currentSubtool = subtoolTitle;
+  function clearContainer() {
+    container.innerHTML = "";
+  }
 
-        workspaceTitle.textContent =
-            tools[toolKey].icon +
-            " " +
-            subtoolTitle;
+  function showTools() {
+    clearContainer();
 
-        userInput.value = "";
+    const title = document.createElement("h2");
+    title.textContent = "Aluniverse";
+    container.appendChild(title);
 
-        result.style.display = "none";
-        result.textContent = "";
+    const grid = document.createElement("div");
+    grid.className = "tools-grid";
 
-        workspace.style.display = "block";
+    Object.entries(tools).forEach(([key, tool]) => {
+      const button = createButton(
+        `${tool.icon} ${tool.title}`,
+        "tool-button"
+      );
 
-        workspace.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
+      button.addEventListener("click", () => {
+        showSubTools(key, tool);
+      });
 
-        console.log(
-            "Opened subtool:",
-            subtoolTitle
-        );
-
-    }
-
-
-    async function runTool() {
-
-        const request = userInput.value.trim();
-
-        if (!request) {
-
-            result.style.display = "block";
-
-            result.textContent =
-                "لطفاً ابتدا درخواست خود را وارد کنید.";
-
-            return;
-        }
-
-
-        runButton.disabled = true;
-
-        runButton.textContent =
-            "در حال پردازش آزمایشی...";
-
-
-        result.style.display = "block";
-
-        result.textContent =
-            "Aluniverse در حال آماده‌سازی نتیجه آزمایشی است...";
-
-
-        try {
-
-            /*
-             * در این مرحله هنوز به OpenAI متصل نمی‌شویم.
-             * هدف، تست کامل مسیر ابزارها بدون پرداخت API است.
-             */
-
-            await new Promise(resolve => {
-                setTimeout(resolve, 900);
-            });
-
-
-            result.textContent =
-                "✅ اجرای آزمایشی با موفقیت انجام شد.\n\n" +
-
-                "ابزار: " +
-                tools[currentTool].title +
-                "\n" +
-
-                "بخش: " +
-                currentSubtool +
-                "\n\n" +
-
-                "درخواست شما:\n" +
-                request +
-                "\n\n" +
-
-                "زبان انتخاب‌شده: " +
-                language.value +
-                "\n\n" +
-
-                "این مرحله آزمایشی است و هنوز به سرویس AI واقعی متصل نشده است.";
-
-
-            console.log(
-                "Aluniverse Test Result:",
-                {
-                    tool: currentTool,
-                    subtool: currentSubtool,
-                    request: request,
-                    language: language.value
-                }
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "Aluniverse Error:",
-                error
-            );
-
-            result.textContent =
-                "خطایی در اجرای آزمایشی رخ داد.";
-
-        } finally {
-
-            runButton.disabled = false;
-
-            runButton.textContent =
-                "اجرای آزمایشی";
-
-        }
-
-    }
-
-
-    cards.forEach((card) => {
-
-        card.addEventListener("click", () => {
-
-            const toolKey =
-                card.getAttribute("data-tool");
-
-            openTool(toolKey);
-
-        });
-
+      grid.appendChild(button);
     });
 
+    container.appendChild(grid);
+  }
 
-    if (runButton) {
+  function showSubTools(key, tool) {
+    clearContainer();
 
-        runButton.addEventListener(
-            "click",
-            runTool
+    const title = document.createElement("h2");
+    title.textContent = `${tool.icon} ${tool.title}`;
+    container.appendChild(title);
+
+    const list = document.createElement("div");
+    list.className = "subtools";
+
+    tool.subtools.forEach((subtool) => {
+      const button = createButton(
+        subtool.name,
+        "subtool-button"
+      );
+
+      button.addEventListener("click", () => {
+        if (subtool.type === "chat") {
+          showChat(subtool.name);
+        } else {
+          showPlaceholder(subtool.name);
+        }
+      });
+
+      list.appendChild(button);
+    });
+
+    container.appendChild(list);
+
+    const back = createButton("⬅️ بازگشت", "back-button");
+    back.addEventListener("click", showTools);
+    container.appendChild(back);
+  }
+
+  function showChat(titleText) {
+    clearContainer();
+
+    const title = document.createElement("h2");
+    title.textContent = `🤖 ${titleText}`;
+    container.appendChild(title);
+
+    const chatBox = document.createElement("div");
+    chatBox.id = "chatBox";
+    chatBox.className = "chat-box";
+    container.appendChild(chatBox);
+
+    const input = document.createElement("textarea");
+    input.id = "aiInput";
+    input.placeholder = "درخواست خود را بنویسید...";
+    input.className = "ai-input";
+    container.appendChild(input);
+
+    const sendButton = createButton(
+      "ارسال",
+      "send-button"
+    );
+    container.appendChild(sendButton);
+
+    const back = createButton(
+      "⬅️ بازگشت",
+      "back-button"
+    );
+    container.appendChild(back);
+
+    back.addEventListener("click", () => {
+      showSubTools("ai", tools.ai);
+    });
+
+    sendButton.addEventListener("click", sendMessage);
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById("aiInput");
+    const chatBox = document.getElementById("chatBox");
+
+    if (!input || !chatBox) return;
+
+    const message = input.value.trim();
+
+    if (!message) {
+      return;
+    }
+
+    addMessage(chatBox, "شما", message);
+
+    input.value = "";
+    input.disabled = true;
+
+    const loading = document.createElement("div");
+    loading.className = "ai-loading";
+    loading.textContent = "🤖 در حال دریافت پاسخ از هوش مصنوعی...";
+    chatBox.appendChild(loading);
+
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: message
+        })
+      });
+
+      const data = await response.json();
+
+      loading.remove();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "خطا در دریافت پاسخ"
         );
+      }
 
+      addMessage(
+        chatBox,
+        "Aluniverse AI",
+        data.answer
+      );
+
+    } catch (error) {
+      loading.remove();
+
+      addMessage(
+        chatBox,
+        "خطا",
+        `❌ ${error.message}`
+      );
+
+      console.error("AI ERROR:", error);
+
+    } finally {
+      input.disabled = false;
+      input.focus();
     }
+  }
 
+  function addMessage(chatBox, sender, text) {
+    const message = document.createElement("div");
+    message.className = "chat-message";
 
-    if (backButton) {
+    const senderElement = document.createElement("strong");
+    senderElement.textContent = `${sender}: `;
 
-        backButton.addEventListener("click", () => {
+    const textElement = document.createElement("span");
+    textElement.textContent = text;
 
-            toolPage.style.display = "none";
+    message.appendChild(senderElement);
+    message.appendChild(textElement);
 
-            homeHero.style.display = "block";
-            features.style.display = "grid";
-            aboutSection.style.display = "block";
+    chatBox.appendChild(message);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
 
-            workspace.style.display = "none";
+  function showPlaceholder(titleText) {
+    clearContainer();
 
-            result.style.display = "none";
+    const title = document.createElement("h2");
+    title.textContent = titleText;
+    container.appendChild(title);
 
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
+    const message = document.createElement("p");
+    message.textContent =
+      "این ابزار در حال آماده‌سازی برای اتصال به سرویس واقعی است.";
+    container.appendChild(message);
 
-        });
-
-    }
-
-
-    const startButton =
-        document.querySelector(".start-button");
-
-
-    if (startButton) {
-
-        startButton.addEventListener("click", (event) => {
-
-            event.preventDefault();
-
-            features.scrollIntoView({
-                behavior: "smooth"
-            });
-
-        });
-
-    }
-
-
-    console.log(
-        "Aluniverse: 6 main tools + subtools activated."
+    const back = createButton(
+      "⬅️ بازگشت",
+      "back-button"
     );
 
+    back.addEventListener("click", showTools);
+    container.appendChild(back);
+  }
+
+  showTools();
 });
