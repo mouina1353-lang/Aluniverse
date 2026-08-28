@@ -36,10 +36,6 @@
       font-size: 17px;
     }
 
-    main {
-      min-height: 500px;
-    }
-
     .hero {
       max-width: 1000px;
       margin: 35px auto;
@@ -97,12 +93,8 @@
       box-shadow: 0 12px 30px rgba(0,0,0,0.12);
     }
 
-    .card:active {
-      transform: scale(0.97);
-    }
-
     .card .icon {
-      font-size: 40px;
+      font-size: 42px;
       margin-bottom: 10px;
     }
 
@@ -131,9 +123,9 @@
     }
 
     .tool-page {
-      max-width: 1000px;
+      max-width: 1050px;
       margin: 40px auto;
-      padding: 45px 25px;
+      padding: 35px 20px;
       text-align: center;
       background: white;
       border-radius: 25px;
@@ -141,41 +133,113 @@
     }
 
     .tool-icon {
-      font-size: 70px;
-      margin-bottom: 15px;
+      font-size: 65px;
+      margin-bottom: 10px;
     }
 
     .tool-page h2 {
       color: #39209b;
       font-size: 32px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
-    .tool-page p {
+    .tool-page > p {
       color: #555;
       font-size: 18px;
       margin-bottom: 25px;
     }
 
-    .tool-status {
-      display: inline-block;
-      background: #f0ebff;
-      color: #39209b;
-      padding: 10px 20px;
-      border-radius: 20px;
-      margin-bottom: 25px;
-      font-size: 15px;
+    .subtools {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 15px;
+      margin: 25px 0;
     }
 
+    .subtool {
+      border: 2px solid #eee9ff;
+      background: #faf9ff;
+      padding: 18px 12px;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .subtool:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .subtool-icon {
+      font-size: 30px;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .subtool-title {
+      font-weight: bold;
+      color: #39209b;
+    }
+
+    .workspace {
+      display: none;
+      max-width: 850px;
+      margin: 25px auto;
+      padding: 25px;
+      background: #f8f6ff;
+      border-radius: 20px;
+      text-align: right;
+    }
+
+    .workspace h3 {
+      color: #39209b;
+      margin-bottom: 15px;
+    }
+
+    .workspace label {
+      display: block;
+      font-weight: bold;
+      margin: 12px 0 7px;
+    }
+
+    .workspace textarea,
+    .workspace input,
+    .workspace select {
+      width: 100%;
+      padding: 13px;
+      border: 2px solid #e3def5;
+      border-radius: 12px;
+      font-size: 16px;
+      direction: rtl;
+      background: white;
+    }
+
+    .workspace textarea {
+      min-height: 130px;
+      resize: vertical;
+    }
+
+    .run-button,
     .back-button {
-      display: inline-block;
       border: none;
       border-radius: 30px;
       background: #5b35d5;
       color: white;
-      padding: 14px 35px;
-      font-size: 18px;
+      padding: 13px 30px;
+      font-size: 17px;
+      font-weight: bold;
       cursor: pointer;
+      margin-top: 18px;
+    }
+
+    .result {
+      display: none;
+      margin-top: 20px;
+      padding: 18px;
+      background: white;
+      border-radius: 15px;
+      color: #39209b;
+      white-space: pre-wrap;
     }
 
     footer {
@@ -184,10 +248,6 @@
       color: white;
       text-align: center;
       padding: 25px;
-    }
-
-    footer p {
-      font-size: 14px;
     }
 
     @media (max-width: 600px) {
@@ -206,6 +266,10 @@
       .features {
         grid-template-columns: 1fr;
         padding: 15px;
+      }
+
+      .subtools {
+        grid-template-columns: 1fr 1fr;
       }
     }
   </style>
@@ -233,47 +297,45 @@
     </a>
   </section>
 
-
   <section class="features" id="features">
 
     <div class="card" data-tool="ai">
       <div class="icon">🤖</div>
       <h3>هوش مصنوعی</h3>
-      <p>ابزارهای هوشمند برای انجام پروژه‌های مختلف</p>
+      <p>دستیار، تحقیق، تحلیل، ترجمه و ابزارهای هوشمند</p>
     </div>
 
     <div class="card" data-tool="image">
       <div class="icon">🎨</div>
       <h3>تولید تصویر</h3>
-      <p>ایجاد تصاویر خلاقانه با کمک هوش مصنوعی</p>
+      <p>تصویر، لوگو، پوستر، بنر و طراحی خلاقانه</p>
     </div>
 
     <div class="card" data-tool="video">
       <div class="icon">🎬</div>
       <h3>ویدئو و انیمیشن</h3>
-      <p>ساخت محتوای ویدئویی و انیمیشنی</p>
+      <p>ویدئو، Reels، Shorts، انیمیشن و تیزر</p>
     </div>
 
     <div class="card" data-tool="content">
       <div class="icon">✍️</div>
       <h3>تولید محتوا</h3>
-      <p>نوشتن مقاله، کتاب و محتوای حرفه‌ای</p>
+      <p>مقاله، کتاب، پادکست، کمپین و محتوای ویروسی</p>
     </div>
 
     <div class="card" data-tool="web">
       <div class="icon">🌐</div>
-      <h3>طراحی وب</h3>
-      <p>کمک به طراحی و توسعه پروژه‌های دیجیتال</p>
+      <h3>طراحی وب و نرم‌افزار</h3>
+      <p>سایت، اپلیکیشن، UI/UX، API و توسعه نرم‌افزار</p>
     </div>
 
     <div class="card" data-tool="execute">
       <div class="icon">🚀</div>
       <h3>از ایده تا اجرا</h3>
-      <p>هدایت مرحله‌به‌مرحله از ایده تا اجرای پروژه</p>
+      <p>تبدیل ایده به پروژه، کسب‌وکار و مسیر اجرایی</p>
     </div>
 
   </section>
-
 
   <section class="about-section" id="about-section">
     <h2>Aluniverse برای چه کسانی است؟</h2>
@@ -285,7 +347,6 @@
     </p>
   </section>
 
-
   <section class="tool-page" id="tool-page" style="display:none;">
 
     <div class="tool-icon" id="tool-icon"></div>
@@ -294,11 +355,35 @@
 
     <p id="tool-description"></p>
 
-    <div class="tool-status">
-      ابزار Aluniverse آماده استفاده است.
-    </div>
+    <div class="subtools" id="subtools"></div>
 
-    <br>
+    <div class="workspace" id="workspace">
+
+      <h3 id="workspace-title"></h3>
+
+      <label for="user-input">درخواست یا توضیحات خود را وارد کنید</label>
+
+      <textarea
+        id="user-input"
+        placeholder="درخواست خود را اینجا بنویسید..."
+      ></textarea>
+
+      <label for="language">زبان</label>
+
+      <select id="language">
+        <option>فارسی</option>
+        <option>English</option>
+        <option>العربية</option>
+        <option>Deutsch</option>
+      </select>
+
+      <button class="run-button" id="run-button">
+        اجرای آزمایشی
+      </button>
+
+      <div class="result" id="result"></div>
+
+    </div>
 
     <button class="back-button" id="back-home">
       بازگشت
@@ -308,11 +393,9 @@
 
 </main>
 
-
 <footer>
   <p>© 2026 Aluniverse - All Rights Reserved</p>
 </footer>
-
 
 <script src="app.js"></script>
 
