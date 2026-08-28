@@ -17,8 +17,8 @@ app.get("/api/status", (req, res) => {
   res.json({
     success: true,
     service: "Aluniverse Backend",
-    version: "4.1.0",
-    groq: !!process.env.GROQ_API_KEY
+    version: "5.0.0",
+    groq: Boolean(process.env.GROQ_API_KEY)
   });
 });
 
@@ -32,9 +32,12 @@ app.get("/api/health", (req, res) => {
 
 app.post("/api/ai", async (req, res) => {
   try {
-    const { message } = req.body;
+    const message =
+      typeof req.body?.message === "string"
+        ? req.body.message.trim()
+        : "";
 
-    if (!message || !message.trim()) {
+    if (!message) {
       return res.status(400).json({
         success: false,
         error: "لطفاً درخواست خود را وارد کنید."
@@ -46,11 +49,13 @@ app.post("/api/ai", async (req, res) => {
     if (!apiKey) {
       return res.status(500).json({
         success: false,
-        error: "GROQ_API_KEY تنظیم نشده است."
+        error: "GROQ_API_KEY در Render تنظیم نشده است."
       });
     }
 
-    const cleanApiKey = apiKey.trim();
+    const cleanApiKey = apiKey
+      .trim()
+      .replace(/^["']|["']$/g, "");
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -58,7 +63,7 @@ app.post("/api/ai", async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${cleanApiKey}`
+          "Authorization": "Bearer " + cleanApiKey
         },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
@@ -66,11 +71,11 @@ app.post("/api/ai", async (req, res) => {
             {
               role: "system",
               content:
-                "You are Aluniverse AI, a helpful, accurate and friendly AI assistant. Answer in the same language as the user's message."
+                "You are Aluniverse AI. Be helpful, accurate and friendly. Answer in the same language as the user."
             },
             {
               role: "user",
-              content: message.trim()
+              content: message
             }
           ],
           temperature: 0.7,
@@ -84,12 +89,16 @@ app.post("/api/ai", async (req, res) => {
     if (!response.ok) {
       console.error("GROQ ERROR:", {
         status: response.status,
-        error: data?.error?.message || "Unknown Groq error"
+        message: data?.error?.message || "Unknown error",
+        type: data?.error?.type || null,
+        code: data?.error?.code || null
       });
 
       return res.status(response.status).json({
         success: false,
-        error: data?.error?.message || "خطا در ارتباط با Groq."
+        error:
+          data?.error?.message ||
+          "خطا در ارتباط با سرویس هوش مصنوعی."
       });
     }
 
@@ -97,15 +106,15 @@ app.post("/api/ai", async (req, res) => {
       data?.choices?.[0]?.message?.content ||
       "پاسخی دریافت نشد.";
 
-    res.json({
+    return res.json({
       success: true,
-      answer
+      answer: answer
     });
 
   } catch (error) {
-    console.error("AI ERROR:", error.message);
+    console.error("SERVER AI ERROR:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: "خطا در ارتباط با سرویس هوش مصنوعی."
     });
