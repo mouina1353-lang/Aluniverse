@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const OpenAI = require("openai");
 const path = require("path");
 
 const app = express();
@@ -10,10 +9,6 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(path.join(__dirname)));
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -22,8 +17,8 @@ app.get("/api/status", (req, res) => {
   res.json({
     success: true,
     service: "Aluniverse Backend",
-    version: "3.0.0",
-    openai: !!process.env.OPENAI_API_KEY
+    version: "4.0.0",
+    groq: !!process.env.GROQ_API_KEY
   });
 });
 
@@ -37,7 +32,7 @@ app.get("/api/health", (req, res) => {
 
 app.post("/api/ai", async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, language } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -46,21 +41,60 @@ app.post("/api/ai", async (req, res) => {
       });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return res.status(500).json({
         success: false,
-        error: "OPENAI_API_KEY تنظیم نشده است."
+        error: "GROQ_API_KEY تنظیم نشده است."
       });
     }
 
-    const response = await client.responses.create({
-      model: "gpt-5-mini",
-      input: message.trim()
-    });
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are Aluniverse AI, a helpful, accurate and friendly AI assistant. Answer in the same language as the user's message."
+            },
+            {
+              role: "user",
+              content: message.trim()
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("GROQ ERROR:", data);
+
+      return res.status(response.status).json({
+        success: false,
+        error:
+          data?.error?.message ||
+          "خطا در ارتباط با سرویس هوش مصنوعی."
+      });
+    }
+
+    const answer =
+      data?.choices?.[0]?.message?.content ||
+      "پاسخی دریافت نشد.";
 
     res.json({
       success: true,
-      answer: response.output_text || "پاسخی دریافت نشد."
+      answer: answer
     });
 
   } catch (error) {
