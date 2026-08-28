@@ -1,273 +1,348 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const tools = {
-    ai: {
-      icon: "🤖",
-      title: "هوش مصنوعی",
-      description: "دستیار، تحقیق، تحلیل، ترجمه و ابزارهای هوشمند",
-      subtools: [
-        { name: "چت هوشمند", type: "chat" },
-        { name: "پرسش و پاسخ", type: "chat" },
-        { name: "دستیار هوشمند", type: "chat" }
-      ]
-    },
+    const tools = {
 
-    image: {
-      icon: "🎨",
-      title: "تولید تصویر",
-      description: "تصویر، لوگو، پوستر، بنر و طراحی خلاقانه",
-      subtools: [
-        { name: "تولید تصویر با متن", type: "placeholder" },
-        { name: "ویرایش تصویر", type: "placeholder" },
-        { name: "تبدیل سبک تصویر", type: "placeholder" }
-      ]
-    },
-
-    video: {
-      icon: "🎬",
-      title: "ویدئو و انیمیشن",
-      description: "ویدئو، Reels، Shorts، انیمیشن و تیزر",
-      subtools: [
-        { name: "تولید ویدئو", type: "placeholder" },
-        { name: "ساخت انیمیشن", type: "placeholder" },
-        { name: "ویرایش ویدئو", type: "placeholder" }
-      ]
-    },
-
-    content: {
-      icon: "✍️",
-      title: "تولید محتوا",
-      description: "مقاله، کتاب، پادکست، کمپین و محتوای ویروسی",
-      subtools: [
-        { name: "مقاله", type: "placeholder" },
-        { name: "کتاب", type: "placeholder" },
-        { name: "پادکست", type: "placeholder" },
-        { name: "کمپین و تبلیغات", type: "placeholder" }
-      ]
-    },
-
-    web: {
-      icon: "🌐",
-      title: "طراحی وب و نرم‌افزار",
-      description: "سایت، اپلیکیشن، UI/UX، API و توسعه نرم‌افزار",
-      subtools: [
-        { name: "ساخت سایت", type: "placeholder" },
-        { name: "طراحی صفحه", type: "placeholder" },
-        { name: "تولید کد", type: "placeholder" }
-      ]
-    },
-
-    execute: {
-      icon: "🚀",
-      title: "از ایده تا اجرا",
-      description: "تبدیل ایده به پروژه، کسب‌وکار و مسیر اجرایی",
-      subtools: [
-        { name: "تبدیل ایده به پروژه", type: "placeholder" },
-        { name: "برنامه‌ریزی پروژه", type: "placeholder" },
-        { name: "اجرای خودکار", type: "placeholder" }
-      ]
-    }
-  };
-
-  const cards = document.querySelectorAll(".card");
-
-  const homeHero = document.getElementById("home-hero");
-  const features = document.getElementById("features");
-  const aboutSection = document.getElementById("about-section");
-  const toolPage = document.getElementById("tool-page");
-
-  const toolIcon = document.getElementById("tool-icon");
-  const toolTitle = document.getElementById("tool-title");
-  const toolDescription = document.getElementById("tool-description");
-  const subtoolsContainer = document.getElementById("subtools");
-
-  const workspace = document.getElementById("workspace");
-  const workspaceTitle = document.getElementById("workspace-title");
-  const userInput = document.getElementById("user-input");
-  const language = document.getElementById("language");
-  const runButton = document.getElementById("run-button");
-  const result = document.getElementById("result");
-  const backHome = document.getElementById("back-home");
-
-  let currentTool = null;
-  let currentSubtool = null;
-
-  cards.forEach(card => {
-    card.addEventListener("click", () => {
-      const key = card.dataset.tool;
-
-      if (tools[key]) {
-        openTool(key);
-      }
-    });
-  });
-
-  function openTool(key) {
-    const tool = tools[key];
-
-    if (!tool) return;
-
-    currentTool = key;
-
-    homeHero.style.display = "none";
-    features.style.display = "none";
-    aboutSection.style.display = "none";
-
-    toolPage.style.display = "block";
-
-    toolIcon.textContent = tool.icon;
-    toolTitle.textContent = tool.title;
-    toolDescription.textContent = tool.description;
-
-    workspace.style.display = "none";
-    result.style.display = "none";
-    result.textContent = "";
-
-    subtoolsContainer.innerHTML = "";
-
-    tool.subtools.forEach(subtool => {
-
-      const button = document.createElement("div");
-      button.className = "subtool";
-
-      const icon = document.createElement("span");
-      icon.className = "subtool-icon";
-
-      const title = document.createElement("span");
-      title.className = "subtool-title";
-      title.textContent = subtool.name;
-
-      if (subtool.type === "chat") {
-        icon.textContent = "💬";
-      } else {
-        icon.textContent = "✨";
-      }
-
-      button.appendChild(icon);
-      button.appendChild(title);
-
-      button.addEventListener("click", () => {
-        openSubtool(subtool);
-      });
-
-      subtoolsContainer.appendChild(button);
-    });
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-  }
-
-  function openSubtool(subtool) {
-
-    currentSubtool = subtool;
-
-    workspace.style.display = "block";
-
-    workspaceTitle.textContent = subtool.name;
-
-    userInput.value = "";
-    result.style.display = "none";
-    result.textContent = "";
-
-    if (subtool.type === "chat") {
-      userInput.placeholder =
-        "پیام خود را بنویسید؛ هوش مصنوعی پاسخ خواهد داد...";
-
-      runButton.textContent = "ارسال به هوش مصنوعی";
-    } else {
-      userInput.placeholder =
-        "درخواست یا توضیحات خود را اینجا بنویسید...";
-
-      runButton.textContent = "اجرای آزمایشی";
-    }
-
-    workspace.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }
-
-  runButton.addEventListener("click", async () => {
-
-    const message = userInput.value.trim();
-
-    if (!message) {
-      result.style.display = "block";
-      result.textContent = "لطفاً ابتدا درخواست خود را وارد کنید.";
-      return;
-    }
-
-    if (!currentSubtool) return;
-
-    if (currentSubtool.type !== "chat") {
-      result.style.display = "block";
-      result.textContent =
-        "این ابزار در حال آماده‌سازی برای اتصال به سرویس واقعی است.";
-      return;
-    }
-
-    runButton.disabled = true;
-    runButton.textContent = "در حال دریافت پاسخ...";
-
-    result.style.display = "block";
-    result.textContent = "🤖 در حال ارتباط با هوش مصنوعی...";
-
-    try {
-
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
+        ai: {
+            icon: "🤖",
+            title: "هوش مصنوعی",
+            text: "دستیار هوشمند Aluniverse برای گفتگو، تحقیق، تحلیل و انجام وظایف.",
+            subtools: [
+                ["💬", "چت هوشمند"],
+                ["💡", "ایده‌پردازی"],
+                ["🔎", "تحقیق و تحلیل"],
+                ["🌍", "ترجمه"],
+                ["📄", "تحلیل فایل و سند"],
+                ["🎯", "مهندسی Prompt"],
+                ["🤖", "دستیار تخصصی"],
+                ["⚙️", "اتوماسیون"]
+            ]
         },
-        body: JSON.stringify({
-          message: message,
-          language: language.value
-        })
-      });
 
-      const data = await response.json();
+        image: {
+            icon: "🎨",
+            title: "تولید تصویر",
+            text: "تولید و ویرایش تصاویر و طراحی‌های خلاقانه.",
+            subtools: [
+                ["🖼️", "تولید تصویر"],
+                ["✏️", "ویرایش تصویر"],
+                ["🔄", "تغییر سبک"],
+                ["✨", "ارتقای کیفیت"],
+                ["🧹", "حذف پس‌زمینه"],
+                ["🏷️", "طراحی لوگو"],
+                ["📢", "پوستر و بنر"],
+                ["📚", "جلد کتاب"],
+                ["📱", "محتوای شبکه اجتماعی"],
+                ["📊", "اینفوگرافیک"]
+            ]
+        },
 
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.error || "خطا در ارتباط با هوش مصنوعی"
-        );
-      }
+        video: {
+            icon: "🎬",
+            title: "ویدئو و انیمیشن",
+            text: "ساخت و آماده‌سازی انواع محتوای ویدئویی.",
+            subtools: [
+                ["🎥", "تولید ویدئو"],
+                ["📱", "Reels"],
+                ["▶️", "Shorts"],
+                ["🎞️", "انیمیشن"],
+                ["📝", "متن به ویدئو"],
+                ["🖼️", "تصویر به ویدئو"],
+                ["🎙️", "دوبله"],
+                ["💬", "زیرنویس"],
+                ["📢", "تیزر تبلیغاتی"],
+                ["✂️", "تدوین ویدئو"]
+            ]
+        },
 
-      result.textContent =
-        data.answer || "پاسخی از هوش مصنوعی دریافت نشد.";
+        content: {
+            icon: "✍️",
+            title: "تولید محتوا",
+            text: "تولید محتوای متنی، صوتی، تبلیغاتی و شبکه‌های اجتماعی.",
+            subtools: [
+                ["📝", "مقاله"],
+                ["📖", "کتاب و داستان"],
+                ["🎙️", "پادکست"],
+                ["🎬", "سناریو"],
+                ["🔥", "محتوای ویروسی"],
+                ["📢", "کمپین"],
+                ["🔍", "SEO"],
+                ["📱", "شبکه‌های اجتماعی"],
+                ["✉️", "محتوای ایمیلی"],
+                ["📣", "متن تبلیغاتی"],
+                ["📅", "تقویم محتوا"],
+                ["🌍", "محتوای چندزبانه"]
+            ]
+        },
 
-    } catch (error) {
+        web: {
+            icon: "🌐",
+            title: "طراحی وب و نرم‌افزار",
+            text: "طراحی، توسعه و آماده‌سازی محصولات دیجیتال.",
+            subtools: [
+                ["🌐", "ساخت وب‌سایت"],
+                ["📄", "Landing Page"],
+                ["🛒", "فروشگاه اینترنتی"],
+                ["📱", "اپلیکیشن"],
+                ["🎨", "UI/UX"],
+                ["💻", "تولید کد"],
+                ["🔌", "ساخت API"],
+                ["🗄️", "Database"],
+                ["🧪", "تست و Debug"],
+                ["🚀", "Deploy و انتشار"],
+                ["⚙️", "اتوماسیون"],
+                ["🔧", "نگهداری و به‌روزرسانی"]
+            ]
+        },
 
-      console.error("AI ERROR:", error);
+        execute: {
+            icon: "🚀",
+            title: "از ایده تا اجرا",
+            text: "ایده خود را مرحله‌به‌مرحله به یک پروژه واقعی تبدیل کنید.",
+            subtools: [
+                ["💡", "تبدیل ایده به پروژه"],
+                ["🔎", "تحقیقات بازار"],
+                ["✅", "اعتبارسنجی ایده"],
+                ["📋", "برنامه‌ریزی"],
+                ["💼", "مدل کسب‌وکار"],
+                ["🏷️", "برندسازی"],
+                ["📣", "بازاریابی"],
+                ["📢", "کمپین"],
+                ["💰", "فروش و درآمد"],
+                ["🎓", "آموزش"],
+                ["📊", "تحلیل عملکرد"],
+                ["📈", "رشد و توسعه"],
+                ["⚙️", "اتوماسیون کسب‌وکار"]
+            ]
+        }
 
-      result.textContent =
-        "❌ خطا در ارتباط با هوش مصنوعی\n\n" +
-        error.message;
+    };
+
+    const cards = document.querySelectorAll(".card[data-tool]");
+
+    const homeHero = document.getElementById("home-hero");
+    const features = document.getElementById("features");
+    const aboutSection = document.getElementById("about-section");
+
+    const toolPage = document.getElementById("tool-page");
+    const toolIcon = document.getElementById("tool-icon");
+    const toolTitle = document.getElementById("tool-title");
+    const toolDescription = document.getElementById("tool-description");
+
+    const subtoolsContainer = document.getElementById("subtools");
+    const workspace = document.getElementById("workspace");
+    const workspaceTitle = document.getElementById("workspace-title");
+    const userInput = document.getElementById("user-input");
+    const language = document.getElementById("language");
+    const runButton = document.getElementById("run-button");
+    const result = document.getElementById("result");
+
+    const backButton = document.getElementById("back-home");
+
+    let currentTool = null;
+    let currentSubtool = null;
+
+    function openTool(toolKey) {
+
+        const tool = tools[toolKey];
+
+        if (!tool) return;
+
+        currentTool = toolKey;
+        currentSubtool = null;
+
+        toolIcon.textContent = tool.icon;
+        toolTitle.textContent = tool.title;
+        toolDescription.textContent = tool.text;
+
+        subtoolsContainer.innerHTML = "";
+
+        workspace.style.display = "none";
+        result.style.display = "none";
+        result.textContent = "";
+        userInput.value = "";
+
+        tool.subtools.forEach((subtool) => {
+
+            const icon = subtool[0];
+            const title = subtool[1];
+
+            const button = document.createElement("div");
+
+            button.className = "subtool";
+
+            button.innerHTML = `
+                <span class="subtool-icon">${icon}</span>
+                <span class="subtool-title">${title}</span>
+            `;
+
+            button.addEventListener("click", () => {
+                openSubtool(toolKey, title);
+            });
+
+            subtoolsContainer.appendChild(button);
+
+        });
+
+        homeHero.style.display = "none";
+        features.style.display = "none";
+        aboutSection.style.display = "none";
+        toolPage.style.display = "block";
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
     }
 
-    runButton.disabled = false;
-    runButton.textContent = "ارسال به هوش مصنوعی";
-  });
+    function openSubtool(toolKey, subtoolTitle) {
 
-  backHome.addEventListener("click", () => {
+        currentTool = toolKey;
+        currentSubtool = subtoolTitle;
 
-    toolPage.style.display = "none";
+        workspaceTitle.textContent =
+            tools[toolKey].icon + " " + subtoolTitle;
 
-    homeHero.style.display = "block";
-    features.style.display = "grid";
-    aboutSection.style.display = "block";
+        userInput.value = "";
 
-    workspace.style.display = "none";
+        result.style.display = "none";
+        result.textContent = "";
 
-    currentTool = null;
-    currentSubtool = null;
+        workspace.style.display = "block";
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
+        workspace.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    }
+
+    async function runTool() {
+
+        const request = userInput.value.trim();
+
+        if (!request) {
+
+            result.style.display = "block";
+            result.textContent =
+                "لطفاً ابتدا درخواست خود را وارد کنید.";
+
+            return;
+        }
+
+        runButton.disabled = true;
+        runButton.textContent = "در حال دریافت پاسخ...";
+
+        result.style.display = "block";
+        result.textContent =
+            "🤖 Aluniverse در حال پردازش درخواست شماست...";
+
+        try {
+
+            const response = await fetch("/api/ai", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message:
+                        "ابزار: " +
+                        tools[currentTool].title +
+                        "\nبخش: " +
+                        currentSubtool +
+                        "\nزبان: " +
+                        language.value +
+                        "\n\nدرخواست کاربر:\n" +
+                        request
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.error || "خطا در دریافت پاسخ"
+                );
+            }
+
+            result.textContent =
+                data.answer || "پاسخی دریافت نشد.";
+
+        } catch (error) {
+
+            console.error("AI ERROR:", error);
+
+            result.textContent =
+                "❌ خطا در ارتباط با هوش مصنوعی\n\n" +
+                error.message;
+
+        } finally {
+
+            runButton.disabled = false;
+            runButton.textContent =
+                "ارسال به هوش مصنوعی";
+
+        }
+    }
+
+    cards.forEach((card) => {
+
+        card.addEventListener("click", () => {
+
+            const toolKey =
+                card.getAttribute("data-tool");
+
+            openTool(toolKey);
+
+        });
+
     });
-  });
+
+    if (runButton) {
+        runButton.addEventListener("click", runTool);
+    }
+
+    if (backButton) {
+
+        backButton.addEventListener("click", () => {
+
+            toolPage.style.display = "none";
+
+            homeHero.style.display = "block";
+            features.style.display = "grid";
+            aboutSection.style.display = "block";
+
+            workspace.style.display = "none";
+            result.style.display = "none";
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+        });
+
+    }
+
+    const startButton =
+        document.querySelector(".start-button");
+
+    if (startButton) {
+
+        startButton.addEventListener("click", (event) => {
+
+            event.preventDefault();
+
+            features.scrollIntoView({
+                behavior: "smooth"
+            });
+
+        });
+
+    }
+
+    console.log(
+        "Aluniverse: 6 main tools + full subtools activated."
+    );
 
 });
