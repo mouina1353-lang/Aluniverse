@@ -121,6 +121,110 @@ app.post("/api/ai", async (req, res) => {
   }
 });
 
+
+
+
+app.post("/api/image", async (req, res) => {
+  try {
+    const prompt =
+      typeof req.body?.prompt === "string"
+        ? req.body.prompt.trim()
+        : "";
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: "لطفاً توضیح تصویر را وارد کنید."
+      });
+    }
+
+    const apiKey = process.env.GROQ_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: "GROQ_API_KEY در Render تنظیم نشده است."
+      });
+    }
+
+    const cleanApiKey = apiKey
+      .trim()
+      .replace(/^["']|["']$/g, "");
+
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + cleanApiKey
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-20b",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Create a simple SVG illustration based on the user's request. Return ONLY valid SVG code, starting with <svg and ending with </svg>. Do not use markdown."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 3000
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("IMAGE ERROR:", data);
+
+      return res.status(response.status).json({
+        success: false,
+        error:
+          data?.error?.message ||
+          "خطا در تولید تصویر."
+      });
+    }
+
+    let svg =
+      data?.choices?.[0]?.message?.content || "";
+
+    svg = svg
+      .replace(/^```svg\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    if (!svg.startsWith("<svg")) {
+      return res.status(500).json({
+        success: false,
+        error: "تصویر SVG معتبر تولید نشد."
+      });
+    }
+
+    return res.json({
+      success: true,
+      imageType: "svg",
+      image: svg
+    });
+
+  } catch (error) {
+    console.error("SERVER IMAGE ERROR:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      error: "خطا در تولید تصویر."
+    });
+  }
+});
+
+
+
 app.listen(PORT, () => {
   console.log(`Aluniverse Backend running on port ${PORT}`);
   console.log(`Available at your primary URL`);
