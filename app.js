@@ -268,6 +268,118 @@ ${request}
 
         try {
 
+            /*
+             * ==========================================
+             * 🎨 مسیر اختصاصی تولید تصویر
+             * فقط برای ابزار image
+             * ==========================================
+             */
+
+            if (currentTool === "image") {
+
+                const imagePrompt = `
+Create an SVG illustration based on this request.
+
+Main tool:
+${tools[currentTool].title}
+
+Subtool:
+${currentSubtool}
+
+User request:
+${request}
+
+Create a clean, attractive and useful illustration.
+Return only valid SVG code.
+Do not use markdown.
+                `.trim();
+
+                const response = await fetch("/api/image", {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        prompt: imagePrompt
+                    })
+
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+
+                    throw new Error(
+                        data.error ||
+                        "خطا در تولید تصویر."
+                    );
+                }
+
+                const svg = data.image;
+
+                if (
+                    typeof svg !== "string" ||
+                    !svg.trim().startsWith("<svg")
+                ) {
+
+                    throw new Error(
+                        "تصویر معتبر دریافت نشد."
+                    );
+                }
+
+                /*
+                 * تصویر را به صورت فایل موقت SVG نمایش می‌دهیم.
+                 * این کار باعث می‌شود SVG مستقیماً داخل HTML اجرا نشود.
+                 */
+
+                const blob = new Blob(
+                    [svg],
+                    {
+                        type: "image/svg+xml"
+                    }
+                );
+
+                const imageUrl =
+                    URL.createObjectURL(blob);
+
+                result.innerHTML = "";
+
+                const imageElement =
+                    document.createElement("img");
+
+                imageElement.src = imageUrl;
+                imageElement.alt =
+                    currentSubtool || "Aluniverse Image";
+
+                imageElement.style.maxWidth = "100%";
+                imageElement.style.height = "auto";
+                imageElement.style.display = "block";
+                imageElement.style.margin = "20px auto";
+                imageElement.style.borderRadius = "12px";
+
+                result.appendChild(imageElement);
+
+                console.log(
+                    "Aluniverse Image Result:",
+                    {
+                        tool: currentTool,
+                        subtool: currentSubtool
+                    }
+                );
+
+                return;
+            }
+
+            /*
+             * ==========================================
+             * 🤖 مسیر قبلی هوش مصنوعی
+             * بدون تغییر برای ۵ ابزار دیگر
+             * ==========================================
+             */
+
             const prompt = buildPrompt(
                 tools[currentTool].title,
                 currentSubtool,
@@ -315,18 +427,19 @@ ${request}
         } catch (error) {
 
             console.error(
-                "Aluniverse AI Error:",
+                "Aluniverse Error:",
                 error
             );
 
             result.textContent =
-                "❌ خطا در ارتباط با هوش مصنوعی\n\n" +
+                "❌ خطا در ارتباط با سرویس\n\n" +
                 error.message;
 
         } finally {
 
             runButton.disabled = false;
-            runButton.textContent = "ارسال به هوش مصنوعی";
+            runButton.textContent =
+                "ارسال به هوش مصنوعی";
         }
     }
 
@@ -385,7 +498,7 @@ ${request}
     }
 
     console.log(
-        "Aluniverse: 6 main tools + all subtools + real AI connection activated."
+        "Aluniverse: 6 main tools + all subtools + AI + Image connection activated."
     );
 
 });
