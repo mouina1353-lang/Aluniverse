@@ -7,6 +7,7 @@ function show(id,value){el(id).style.display=value}
 function openGroup(g){group=g;sub='';el('tool-icon').textContent=meta[g][0];el('tool-title').textContent=meta[g][1];el('tool-description').textContent='زیرمجموعه موردنظر را انتخاب کنید.';el('subtools').replaceChildren();groups[g].forEach((s,i)=>{const div=document.createElement('div');div.className='subtool';const icon=document.createElement('span');icon.className='subtool-icon';icon.textContent=subIcons[g][i]||'✦';const title=document.createElement('span');title.className='subtool-title';title.textContent=s;div.append(icon,title);div.addEventListener('click',()=>openSub(s));el('subtools').appendChild(div)});show('home-hero','none');show('features','none');show('about-section','none');show('tool-page','block');show('workspace','none');window.scrollTo(0,0)}
 function openSub(s){sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'?'block':'none');show('image-settings',group==='image'?'block':'none');el('workspace').scrollIntoView({behavior:'smooth'})}
 const webSubs=['ساخت وب‌سایت','Landing Page','فروشگاه اینترنتی','تولید کد'];
+const webStoreKey='aluniverse_web_project_v1';
 let webSource='',webComplete=false;
 function extractHtml(text){
   const fenced=text.match(/```(?:html)?\s*([\s\S]*?)(?:```|$)/i);
@@ -30,12 +31,28 @@ function setupWebTools(){
   const note=document.createElement('p');note.className='note';note.textContent='بعد از تولید سایت، دکمه‌ها فعال می‌شوند.';
   const frame=document.createElement('iframe');frame.className='web-preview';frame.title='پیش‌نمایش وب‌سایت';frame.setAttribute('sandbox','allow-scripts');frame.referrerPolicy='no-referrer';frame.hidden=true;
   const raw=document.createElement('pre');raw.className='web-code';raw.hidden=true;
+  const editor=document.createElement('textarea');editor.className='web-editor';editor.placeholder='کد HTML را اینجا ویرایش کنید...';editor.hidden=true;editor.dir='ltr';editor.spellcheck=false;
+  const extra=document.createElement('div');extra.className='web-output-actions';
+  const edit=document.createElement('button');edit.type='button';edit.textContent='✏️ ویرایش سایت';edit.disabled=true;
+  const apply=document.createElement('button');apply.type='button';apply.textContent='✅ اعمال تغییرات';apply.disabled=true;
+  const save=document.createElement('button');save.type='button';save.textContent='💾 ذخیره در گوشی';save.disabled=true;
+  const restore=document.createElement('button');restore.type='button';restore.textContent='📂 بازیابی پروژه';
+  const upload=document.createElement('input');upload.type='file';upload.accept='.html,text/html';upload.hidden=true;
+  const importBtn=document.createElement('button');importBtn.type='button';importBtn.textContent='📄 بازکردن HTML';
+  function loadHtml(codeText){const found=extractHtml(codeText);if(!found||!found.complete){note.textContent='⚠️ فایل HTML کامل نیست؛ تغییری اعمال نشد.';return false;}webSource=found.html;webComplete=true;raw.textContent=webSource;editor.value=webSource;preview.disabled=false;code.disabled=false;download.disabled=false;edit.disabled=false;save.disabled=false;apply.disabled=false;frame.srcdoc=webSource;frame.hidden=false;raw.hidden=true;editor.hidden=true;note.textContent='سایت آماده پیش‌نمایش، ویرایش و دانلود است.';return true;}
+  edit.onclick=()=>{editor.value=webSource;editor.hidden=false;frame.hidden=true;raw.hidden=true;editor.focus()};
+  apply.onclick=()=>{if(!loadHtml(editor.value))editor.hidden=false};
+  save.onclick=()=>{try{localStorage.setItem(webStoreKey,JSON.stringify({html:webSource,savedAt:new Date().toISOString()}));note.textContent='پروژه در همین مرورگر ذخیره شد؛ برای پشتیبان مطمئن فایل HTML را هم دانلود کنید.';}catch(e){note.textContent='ذخیره محلی ممکن نشد؛ از دانلود HTML استفاده کنید.'}};
+  restore.onclick=()=>{try{const v=JSON.parse(localStorage.getItem(webStoreKey)||'null');if(!v?.html){note.textContent='پروژه ذخیره‌شده‌ای در این مرورگر وجود ندارد.';return;}loadHtml(v.html)}catch(e){note.textContent='بازیابی پروژه ناموفق بود.'}};
+  importBtn.onclick=()=>upload.click();
+  upload.onchange=async()=>{const f=upload.files?.[0];if(!f)return;if(f.size>1024*1024){note.textContent='فایل HTML باید کمتر از یک مگابایت باشد.';return;}try{loadHtml(await f.text())}catch(e){note.textContent='خواندن فایل ممکن نشد.'}upload.value=''};
+  extra.append(edit,apply,save,restore,importBtn);
   preview.onclick=()=>{frame.hidden=false;raw.hidden=true};
   code.onclick=()=>{raw.hidden=false;frame.hidden=true};
   download.onclick=()=>{if(!webComplete)return;const blob=new Blob([webSource],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='aluniverse-website.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)};
-  bar.append(preview,code,download);panel.append(bar,note,frame,raw);
+  bar.append(preview,code,download);panel.append(bar,extra,note,frame,raw,editor,upload);
   el('result').before(panel);
-  panel._controls={preview,code,download,note,frame,raw};
+  panel._controls={preview,code,download,note,frame,raw,edit,apply,save,editor};
 }
 function outputWeb(t){
   outputText(t);
@@ -45,8 +62,8 @@ function outputWeb(t){
   if(!found){c.preview.disabled=true;c.download.disabled=true;c.note.textContent='پاسخ کد HTML ندارد؛ «نمایش کد» برای مشاهده پاسخ فعال است.';return;}
   webSource=found.html;webComplete=found.complete;
   // Only preview a full document; never silently treat a truncated script as finished.
-  c.preview.disabled=!webComplete;c.download.disabled=!webComplete;
-  if(webComplete){c.frame.srcdoc=webSource;c.note.textContent='کد HTML کامل شناسایی شد. پیش‌نمایش یا دانلود را انتخاب کنید.';}
+  c.preview.disabled=!webComplete;c.download.disabled=!webComplete;c.edit.disabled=!webComplete;c.apply.disabled=!webComplete;c.save.disabled=!webComplete;
+  if(webComplete){c.editor.value=webSource;c.frame.srcdoc=webSource;c.note.textContent='کد HTML کامل شناسایی شد. پیش‌نمایش یا دانلود را انتخاب کنید.';}
   else{c.frame.removeAttribute('srcdoc');c.frame.hidden=true;c.note.textContent='⚠️ خروجی HTML ناقص است (برچسب پایانی </html> وجود ندارد). نمایش کد فعال است؛ برای پیش‌نمایش و دانلود باید خروجی تکمیل شود.';}
 }
 function fileData(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('خواندن تصویر ناموفق بود.'));reader.readAsDataURL(file)})}
