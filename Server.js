@@ -4,7 +4,7 @@ const path=require('path');
 const app=express();
 app.use(cors());app.use(express.json({limit:'22mb'}));app.use(express.static(__dirname));
 app.get('/',(_,res)=>res.sendFile(path.join(__dirname,'index.html')));
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.2.0',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.3.2',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -34,7 +34,12 @@ async function translatePrompt(prompt){
 function replicateHeaders(){const token=clean(process.env.REPLICATE_API_TOKEN);if(!token)throw Error('توکن Replicate تنظیم نشده است.');return {Authorization:`Bearer ${token}`,'Content-Type':'application/json'};}
 function getModel(kind,reference){const model=reference&&kind==='image'?models.image_edit:models[kind];if(!model)throw Error('برای ویرایش تصویر، REPLICATE_EDIT_MODEL در Render تنظیم نشده است.');return model;}
 function predictionInput(kind,prompt,reference,ratio){
-  const input={prompt};
+  // Start directly in the requested scene. Avoid generated text/title cards.
+  // Prompt guidance reduces artifacts but cannot guarantee their absence.
+  const visualPrompt=kind==='video'||kind==='animation'
+    ? `${prompt}\n\nVIDEO CONSTRAINTS: From the very first frame, show the actual requested scene and subject in full view. Continuous live-action visual scene, no intro, no title card, no white screen, no document or page, no written text, no letters, no typography, no subtitles, no captions, no credits, no logos, no watermark, no UI elements, no transitions from a text screen. Natural continuous motion from frame one.`
+    : prompt;
+  const input={prompt:visualPrompt};
   if(kind==='image'&&!reference){input.aspect_ratio=ratio||'1:1';input.num_outputs=1;input.output_format='png';}
   if(reference){
     if(!/^data:image\/(png|jpeg|webp);base64,/.test(reference)&&!validUrl(reference))throw Error('فرمت تصویر مرجع معتبر نیست.');
@@ -78,4 +83,4 @@ app.get('/api/media/status/:id',async(req,res)=>{
 // Existing endpoints are retained for compatibility; new UI uses start/status.
 for(const kind of ['image','video','animation'])app.post(`/api/${kind}`,(_,res)=>res.status(409).json({success:false,error:'لطفاً صفحه را تازه‌سازی کنید تا نسخه جدید بارگذاری شود.'}));
 setInterval(()=>{for(const [k,v] of jobs)if(Date.now()-v.created>24*60*60*1000)jobs.delete(k)},3600000).unref();
-app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.2.0 ready'));
+app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.3.2 ready'));
