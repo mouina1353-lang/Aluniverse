@@ -1,12 +1,36 @@
 document.addEventListener('DOMContentLoaded',()=>{
-const groups={ai:['چت هوشمند','ایده‌پردازی','تحقیق و تحلیل','ترجمه','تحلیل فایل و سند','مهندسی Prompt','دستیار تخصصی','اتوماسیون'],image:['تولید تصویر','ویرایش تصویر','تغییر سبک','ارتقای کیفیت','حذف پس‌زمینه','افکت تصویری','طراحی لوگو','تراکت','بنر و پوستر','تصاویر تبلیغاتی و غیرتبلیغاتی','طراحی صحنه و استوری‌بورد تیزر','کاتالوگ و بروشور','جلد کتاب','کارت ویزیت','محتوای شبکه اجتماعی','اینفوگرافیک','تصویر سه‌بعدی'],video:['تولید ویدئو','تصویر به ویدئو','ویرایش ویدئو','ساخت انیمیشن','افکت سینمایی','تیزر تبلیغاتی','تیزر غیرتبلیغاتی','تیزر معرفی محصول','تیزر آموزشی و مستند','فیلم و سریال چندسکانسی','چسباندن کلیپ‌ها','تدوین ویدئو','موشن‌گرافیک','ریلز','Shorts','دوبله','زیرنویس','محتوای آموزشی از منابع'],content:['مقاله','کتاب و داستان','پادکست','سناریو','محتوای ویروسی','کمپین','SEO','شبکه‌های اجتماعی','محتوای ایمیلی','متن تبلیغاتی','تقویم محتوا','محتوای چندزبانه'],web:['ساخت وب‌سایت','Landing Page','فروشگاه اینترنتی','اپلیکیشن','UI/UX','تولید کد','ساخت API','Database','تست و Debug','Deploy و انتشار','اتوماسیون','نگهداری و به‌روزرسانی'],execute:['تبدیل ایده به پروژه','تحقیقات بازار','اعتبارسنجی ایده','برنامه‌ریزی','مدل کسب‌وکار','برندسازی','بازاریابی','کمپین','فروش و درآمد','آموزش','تحلیل عملکرد','رشد و توسعه','اتوماسیون کسب‌وکار']};
-const subIcons={"ai": ["💬", "💡", "🔎", "🌍", "📄", "🎯", "🤖", "⚙️"], "image": ["🖼️", "✏️", "🔄", "✨", "🧹", "🌟", "🏷️", "📄", "📢", "🖼️", "🎬", "📑", "📚", "💳", "📱", "📊", "🧊"], "video": ["🎥", "🖼️", "✂️", "🎞️", "✨", "📢", "🎭", "📦", "🎓", "🎬", "🔗", "🎛️", "🎨", "📱", "▶️", "🎙️", "💬", "📚"], "content": ["📝", "📖", "🎙️", "🎬", "🔥", "📢", "🔍", "📱", "✉️", "📣", "📅", "🌍"], "web": ["🌐", "📄", "🛒", "📱", "🎨", "💻", "🔌", "🗄️", "🧪", "🚀", "⚙️", "🔧"], "execute": ["💡", "🔎", "✅", "📋", "💼", "🏷️", "📣", "📢", "💰", "🎓", "📊", "📈", "⚙️"]};
+const groups={ai:['چت هوشمند','ایده‌پردازی','تحقیق و تحلیل','ترجمه','تحلیل فایل و سند','مهندسی Prompt','دستیار تخصصی','اتوماسیون هوشمند'],image:['تولید تصویر','ویرایش تصویر','تغییر سبک','ارتقای کیفیت','حذف پس‌زمینه','افکت تصویری','طراحی لوگو','تراکت','بنر و پوستر','تصاویر تبلیغاتی و غیرتبلیغاتی','طراحی صحنه و استوری‌بورد تیزر','کاتالوگ و بروشور','جلد کتاب','کارت ویزیت','محتوای شبکه اجتماعی','اینفوگرافیک','تصویر سه‌بعدی'],video:['تولید ویدئو','تصویر به ویدئو','ویرایش ویدئو','ساخت انیمیشن','افکت سینمایی','تیزر تبلیغاتی','تیزر غیرتبلیغاتی','تیزر معرفی محصول','تیزر آموزشی و مستند','فیلم و سریال چندسکانسی','چسباندن کلیپ‌ها','تدوین ویدئو','موشن‌گرافیک','ریلز','Shorts','دوبله','زیرنویس','محتوای آموزشی از منابع'],content:['مقاله','کتاب و داستان','پادکست','سناریو','محتوای ویروسی','کمپین','SEO','شبکه‌های اجتماعی','محتوای ایمیلی','متن تبلیغاتی','تقویم محتوا','محتوای چندزبانه'],web:['ساخت وب‌سایت','Landing Page','فروشگاه اینترنتی','اپلیکیشن','UI/UX','تولید کد','ساخت API','Database','تست و Debug','Deploy و انتشار','اتوماسیون فنی','نگهداری و به‌روزرسانی'],execute:['تحلیل ایده','تبدیل ایده به پروژه','تحقیقات بازار','اعتبارسنجی ایده','برنامه‌ریزی','مدل کسب‌وکار','برندسازی','بازاریابی','کمپین','فروش و درآمد','آموزش','تحلیل عملکرد','رشد و توسعه','اتوماسیون کسب‌وکار']};
+const subIcons={"ai": ["💬", "💡", "🔎", "🌍", "📄", "🎯", "🤖", "⚙️"], "image": ["🖼️", "✏️", "🔄", "✨", "🧹", "🌟", "🏷️", "📄", "📢", "🖼️", "🎬", "📑", "📚", "💳", "📱", "📊", "🧊"], "video": ["🎥", "🖼️", "✂️", "🎞️", "✨", "📢", "🎭", "📦", "🎓", "🎬", "🔗", "🎛️", "🎨", "📱", "▶️", "🎙️", "💬", "📚"], "content": ["📝", "📖", "🎙️", "🎬", "🔥", "📢", "🔍", "📱", "✉️", "📣", "📅", "🌍"], "web": ["🌐", "📄", "🛒", "📱", "🎨", "💻", "🔌", "🗄️", "🧪", "🚀", "⚙️", "🔧"], "execute": ["🔍", "💡", "🔎", "✅", "📋", "💼", "🏷️", "📣", "📢", "💰", "🎓", "📊", "📈", "⚙️"]};
 const meta={ai:['🤖','هوش مصنوعی'],image:['🎨','تولید تصویر'],video:['🎬','ویدئو و انیمیشن'],content:['✍️','تولید محتوا'],web:['🌐','طراحی وب و نرم‌افزار'],execute:['🚀','از ایده تا اجرا']};
 const el=id=>document.getElementById(id);let group='',sub='',busy=false,activeJob=null;
 function show(id,value){el(id).style.display=value}
 function openGroup(g){group=g;sub='';el('tool-icon').textContent=meta[g][0];el('tool-title').textContent=meta[g][1];el('tool-description').textContent='زیرمجموعه موردنظر را انتخاب کنید.';el('subtools').replaceChildren();groups[g].forEach((s,i)=>{const div=document.createElement('div');div.className='subtool';const icon=document.createElement('span');icon.className='subtool-icon';icon.textContent=subIcons[g][i]||'✦';const title=document.createElement('span');title.className='subtool-title';title.textContent=s;div.append(icon,title);div.addEventListener('click',()=>openSub(s));el('subtools').appendChild(div)});show('home-hero','none');show('features','none');show('about-section','none');show('tool-page','block');show('workspace','none');window.scrollTo(0,0)}
 function openSub(s){sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'?'block':'none');show('image-settings',group==='image'?'block':'none');el('workspace').scrollIntoView({behavior:'smooth'})}
+function extractHtml(text){
+  const fenced=text.match(/```(?:html)?\s*([\s\S]*?)```/i);
+  const candidate=fenced?fenced[1]:text;
+  const start=candidate.search(/<!doctype\s+html|<html[\s>]/i);
+  if(start<0)return null;
+  const end=candidate.toLowerCase().lastIndexOf('</html>');
+  if(end<0)return null;
+  return candidate.slice(start,end+7);
+}
 function outputText(t){el('result').textContent=t;show('result','block')}
+function outputWeb(t){
+  const html=extractHtml(t);
+  if(!html){outputText(t+'\n\nبرای پیش‌نمایش، از ابزار بخواهید کد کامل HTML شامل <!DOCTYPE html> و </html> را یکجا تولید کند.');return;}
+  const result=el('result');result.replaceChildren();
+  const toolbar=document.createElement('div');toolbar.className='web-output-actions';
+  const preview=document.createElement('button');preview.type='button';preview.textContent='👁 پیش‌نمایش سایت';
+  const code=document.createElement('button');code.type='button';code.textContent='💻 نمایش کد';
+  const download=document.createElement('button');download.type='button';download.textContent='⬇️ دانلود HTML';
+  const frame=document.createElement('iframe');frame.className='web-preview';frame.title='پیش‌نمایش وب‌سایت';frame.setAttribute('sandbox','allow-scripts');frame.referrerPolicy='no-referrer';frame.srcdoc=html;
+  const raw=document.createElement('pre');raw.className='web-code';raw.textContent=t;raw.hidden=true;
+  preview.onclick=()=>{frame.hidden=false;raw.hidden=true};
+  code.onclick=()=>{frame.hidden=true;raw.hidden=false};
+  download.onclick=()=>{const blob=new Blob([html],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='aluniverse-website.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)};
+  toolbar.append(preview,code,download);result.append(toolbar,frame,raw);show('result','block');
+}
 function fileData(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('خواندن تصویر ناموفق بود.'));reader.readAsDataURL(file)})}
 function endpoint(){if(group==='image')return 'image';if(group==='video'){if(sub.includes('انیمیشن'))return 'animation';return 'video'}return 'ai'}
 
@@ -42,8 +66,8 @@ async function run(){
   busy=true;el('run-button').disabled=true;el('run-button').textContent='در حال پردازش...';outputText('در حال آماده‌سازی درخواست...');
   try{
     if(kind==='ai'){
-      const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`ابزار: ${meta[group][1]}؛ زیرابزار: ${sub}؛ زبان: ${el('language').value}\nدرخواست: ${request}`})});
-      const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'خطای هوش مصنوعی');return outputText(data.answer||'پاسخی دریافت نشد.');
+      const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`ابزار: ${meta[group][1]}؛ زیرابزار: ${sub}؛ زبان: ${el('language').value}\n${group==='web'?'اگر درخواست ساخت صفحه وب است، یک فایل HTML کامل و مستقل با CSS و JavaScript داخلی تولید کن؛ پاسخ را با <!DOCTYPE html> شروع و با </html> تمام کن. کد را تا حد امکان کامل بنویس.':''}\n${sub==='تحلیل ایده'?'ایده را با معیارهای نیاز بازار، مشتری هدف، نقاط قوت و ضعف، امکان‌سنجی فنی، هزینه تقریبی، ریسک‌ها، رقبا، مدل درآمد و پیشنهاد اجرای MVP تحلیل کن. هزینه‌ها و اعداد را تخمینی و همراه با فرضیات بیان کن.':''}\n${sub==='اتوماسیون هوشمند'?'فقط بر اتوماسیون مبتنی بر مدل هوش مصنوعی، دستیارها، پردازش سند و گردش‌کار هوشمند تمرکز کن؛ در صورت درخواست، طرح اجرایی بده و ادعای اجرای واقعی نکن.':''}\n${sub==='اتوماسیون فنی'?'فقط بر اتوماسیون فنی نرم‌افزار، API، پایگاه داده، زمان‌بندی و تست تمرکز کن؛ در صورت درخواست کد نمونه بده و ادعای استقرار واقعی نکن.':''}\n${sub==='اتوماسیون کسب‌وکار'?'فقط بر گردش‌کار فروش، CRM، بازاریابی، پشتیبانی و گزارش‌های مدیریتی تمرکز کن؛ در صورت درخواست مراحل اجرا بده و ادعای اتصال واقعی به سامانه‌ها نکن.':''}\nدرخواست: ${request}`})});
+      const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'خطای هوش مصنوعی');return group==='web'?outputWeb(data.answer||'پاسخی دریافت نشد.'):outputText(data.answer||'پاسخی دریافت نشد.');
     }
     const body={kind,prompt:request,request_id:(crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random().toString(36).slice(2)).replace(/[^a-zA-Z0-9_-]/g,''),aspect_ratio:el('image-ratio').value};
     const file=el('reference-file').files[0];
