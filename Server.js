@@ -4,14 +4,14 @@ const path=require('path');
 const app=express();
 app.use(cors());app.use(express.json({limit:'22mb'}));app.use(express.static(__dirname));
 app.get('/',(_,res)=>res.sendFile(path.join(__dirname,'index.html')));
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.4.0',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.4.1',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
 const base='https://api.replicate.com/v1';
-const models={image:process.env.REPLICATE_IMAGE_MODEL||'black-forest-labs/flux-schnell',image_edit:process.env.REPLICATE_EDIT_MODEL||'',video:process.env.REPLICATE_VIDEO_MODEL||'minimax/video-01',animation:process.env.REPLICATE_ANIMATION_MODEL||'minimax/video-01',video10:clean(process.env.REPLICATE_VIDEO_10_MODEL)};
+const models={image:process.env.REPLICATE_IMAGE_MODEL||'black-forest-labs/flux-schnell',image_edit:process.env.REPLICATE_EDIT_MODEL||'',video:process.env.REPLICATE_VIDEO_MODEL||'minimax/video-01',animation:process.env.REPLICATE_ANIMATION_MODEL||'minimax/video-01',video10:'wan-video/wan-2.2-t2v-fast'};
 function urlOf(out){if(typeof out==='string')return out;if(Array.isArray(out))return out.map(urlOf).find(Boolean)||null;if(out&&typeof out==='object'){if(typeof out.url==='string')return out.url;if(typeof out.url==='function')return String(out.url());}return null}
 function validUrl(url){return typeof url==='string'&&/^https:\/\//i.test(url)}
 
@@ -32,8 +32,11 @@ async function translatePrompt(prompt){
   return result;
 }
 function replicateHeaders(){const token=clean(process.env.REPLICATE_API_TOKEN);if(!token)throw Error('توکن Replicate تنظیم نشده است.');return {Authorization:`Bearer ${token}`,'Content-Type':'application/json'};}
-function tenInput(){try{const obj=JSON.parse(process.env.REPLICATE_VIDEO_10_INPUT_JSON||'null');if(!obj||typeof obj!=='object'||Array.isArray(obj))return null;return obj}catch{return null}}
-const tenConfigured=()=>!!(models.video10&&tenInput());
+// Wan 2.2 T2V Fast schema: num_frames 81..121; frames_per_second 5..30.
+// 121/12 = 10.083s nominal. Actual duration must be verified on a paid test.
+// Opt-in prevents accidental Replicate charges before user approves a test.
+const tenConfigured=()=>process.env.REPLICATE_VIDEO_10_ENABLED==='true';
+function tenInput(){return {num_frames:121,frames_per_second:12,go_fast:true,resolution:'480p',aspect_ratio:'16:9',interpolate_output:true};}
 function getModel(kind,reference,duration){if(kind==='video'&&duration===10){if(!tenConfigured())throw Error('مدل ۱۰ ثانیه‌ای پیکربندی نشده است؛ هزینه‌ای ثبت نشد.');return models.video10;}const model=reference&&kind==='image'?models.image_edit:models[kind];if(!model)throw Error('برای ویرایش تصویر، REPLICATE_EDIT_MODEL در Render تنظیم نشده است.');return model;}
 function predictionInput(kind,prompt,reference,ratio,duration){
   // Start directly in the requested scene. Avoid generated text/title cards.
@@ -47,11 +50,11 @@ function predictionInput(kind,prompt,reference,ratio,duration){
     if(!/^data:image\/(png|jpeg|webp);base64,/.test(reference)&&!validUrl(reference))throw Error('فرمت تصویر مرجع معتبر نیست.');
     if(kind==='image')input.input_image=reference;else input.first_frame_image=reference;
   }
-  if(kind==='video'&&duration===10){const extra=tenInput();if(!extra)throw Error('تنظیمات ورودی مدل ۱۰ ثانیه‌ای نامعتبر است.');for(const [k,v] of Object.entries(extra)){if(['prompt','first_frame_image'].includes(k))throw Error('ورودی مدل ۱۰ ثانیه‌ای نباید prompt یا first_frame_image را بازنویسی کند.');input[k]=v;}}
+  if(kind==='video'&&duration===10){if(reference)throw Error('مدل ۱۰ ثانیه‌ای انتخاب‌شده فقط متن به ویدئو است؛ تصویر مرجع را حذف کنید.');const extra=tenInput();if(!extra)throw Error('تنظیمات ورودی مدل ۱۰ ثانیه‌ای نامعتبر است.');for(const [k,v] of Object.entries(extra)){if(['prompt','first_frame_image'].includes(k))throw Error('ورودی مدل ۱۰ ثانیه‌ای نباید prompt یا first_frame_image را بازنویسی کند.');input[k]=v;}}
   return input;
 }
 function normalize(p,kind){const url=urlOf(p.output);return {success:p.status==='succeeded',type:kind,status:p.status,prediction_id:p.id,url:validUrl(url)?url:null,image:kind==='image'?url:undefined,video:kind!=='image'?url:undefined,error:p.error||null};}
-app.get('/api/media/config',(_,res)=>res.json({success:true,video:{model:models.video,durations:tenConfigured()?[5,10]:[5],tenSecondsConfigured:tenConfigured(),resolution:['720p'],fps:[25],ratios:['16:9'],note:'ویدئوی ۱۰ ثانیه‌ای تنها پس از تنظیم مدل و ورودی سازگار فعال می‌شود.'},image:{ratios:[...supportedRatios],editConfigured:!!models.image_edit}}));
+app.get('/api/media/config',(_,res)=>res.json({success:true,video:{model:models.video,durations:tenConfigured()?[5,10]:[5],tenSecondsConfigured:tenConfigured(),resolution:['720p'],fps:[25],ratios:['16:9'],note:'۱۰ ثانیه با Wan 2.2 (121 فریم، 12 FPS)؛ خروجی حدود 10.08 ثانیه است و باید آزمایش واقعی شود. مدل ۵ ثانیه‌ای بدون تغییر باقی است.'},image:{ratios:[...supportedRatios],editConfigured:!!models.image_edit}}));
 app.post('/api/media/start',async(req,res)=>{
   try{
     const kind=String(req.body?.kind||'');if(!['image','video','animation'].includes(kind))return res.status(400).json({success:false,error:'نوع ابزار نامعتبر است.'});
@@ -88,4 +91,4 @@ app.get('/api/media/status/:id',async(req,res)=>{
 // Existing endpoints are retained for compatibility; new UI uses start/status.
 for(const kind of ['image','video','animation'])app.post(`/api/${kind}`,(_,res)=>res.status(409).json({success:false,error:'لطفاً صفحه را تازه‌سازی کنید تا نسخه جدید بارگذاری شود.'}));
 setInterval(()=>{for(const [k,v] of jobs)if(Date.now()-v.created>24*60*60*1000)jobs.delete(k)},3600000).unref();
-app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.4.0 ready'));
+app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.4.1 ready'));
