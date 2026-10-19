@@ -92,7 +92,7 @@ async function follow(id,kind){
     let response;
     try{response=await fetch(`/api/media/status/${encodeURIComponent(id)}?kind=${kind}`,{cache:'no-store'});}catch(e){outputText('اتصال موقتاً قطع شد؛ در حال تلاش مجدد...');continue;}
     const data=await response.json();if(!response.ok) {outputText('در حال بررسی وضعیت... '+(data.error||''));continue;}
-    if(data.status==='succeeded'){displayMedia(data,kind);localStorage.removeItem('aluniverse_media_job');activeJob=null;return;}
+    if(data.status==='succeeded'){if(!data.url&&!data.image&&!data.video)throw Error(data.error||'لینک خروجی دریافت نشد.');displayMedia(data,kind);if(data.gallery_saved===false)outputText('⚠️ خروجی نمایش داده شد، اما ذخیره دائمی در گالری انجام نشد. لطفاً فایل را اکنون دریافت کنید.');localStorage.removeItem('aluniverse_media_job');activeJob=null;return;}
     if(['failed','canceled'].includes(data.status)){localStorage.removeItem('aluniverse_media_job');activeJob=null;throw Error(data.error||'پردازش ناموفق یا لغو شد.');}
     outputText('⏳ وضعیت تولید: '+data.status+'\nشناسه: '+id+'\nمی‌توانید صفحه را باز نگه دارید.');
   }
@@ -114,7 +114,7 @@ async function run(){
     if(file){if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('فقط JPG، PNG یا WebP مجاز است.');if(file.size>6*1024*1024)throw Error('تصویر مرجع باید کمتر از ۶ مگابایت باشد.');body.reference=await fileData(file);}
     const response=await fetch('/api/media/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'ثبت درخواست ناموفق بود.');
-    if(!data.prediction_id)throw Error('شناسه پردازش دریافت نشد؛ درخواست جدید ثبت نکنید و لاگ Render را بررسی کنید.');
+    if(!data.prediction_id)throw Error(data.pending?'درخواست قبلی هنوز در حال آماده‌سازی است؛ برای جلوگیری از هزینه تکراری دوباره اجرا نکنید.':'شناسه پردازش دریافت نشد؛ درخواست جدید ثبت نکنید و لاگ Render را بررسی کنید.');
     outputText('درخواست ثبت شد؛ در انتظار نتیجه Replicate...');await follow(data.prediction_id,kind);
   }catch(e){outputText('❌ '+e.message)}finally{finish()}
 }

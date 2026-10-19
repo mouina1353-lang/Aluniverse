@@ -97,7 +97,7 @@ app.post('/api/media/start',async(req,res)=>{
     const kind=String(req.body?.kind||'');if(!['image','video','animation'].includes(kind))return res.status(400).json({success:false,error:'نوع ابزار نامعتبر است.'});
     const prompt=String(req.body?.prompt||'').trim();if(!prompt||prompt.length>12000)return res.status(400).json({success:false,error:'متن درخواست خالی یا بیش از حد طولانی است.'});
     const key=String(req.body?.request_id||'');if(!/^[a-zA-Z0-9_-]{12,90}$/.test(key))return res.status(400).json({success:false,error:'شناسه درخواست معتبر نیست.'});
-    if(jobs.has(key))return res.json({success:true,...jobs.get(key)});
+    if(jobs.has(key)){const existing=jobs.get(key);return res.json({success:true,...existing,pending:!existing.prediction_id});}
     const reference=req.body?.reference||null;
     if(reference&&typeof reference!=='string')return res.status(400).json({success:false,error:'تصویر مرجع نامعتبر است.'});
     if(reference&&reference.length>9_000_000)return res.status(413).json({success:false,error:'تصویر مرجع بیش از حد بزرگ است.'});
@@ -132,6 +132,7 @@ app.get('/api/media/status/:id',async(req,res)=>{
         }
       }catch(e){console.error('GALLERY ERROR',id,e.message);result.gallery_saved=false;result.gallery_error='ذخیره در گالری انجام نشد؛ خروجی اصلی همچنان قابل دریافت است.';}
     }
+    if(p.status==='succeeded'&&!result.url){result.success=false;result.error='پردازش موفق بود اما لینک خروجی دریافت نشد.';}
     res.json(result);
   }catch(e){console.error('MEDIA STATUS ERROR',e.message);res.status(502).json({success:false,error:e.message});}
 });
