@@ -7,63 +7,67 @@ const el=id=>document.getElementById(id);let group='',sub='',busy=false,activeJo
 function show(id,value){el(id).style.display=value}
 function openGroup(g){group=g;sub='';el('tool-icon').textContent=meta[g][0];el('tool-title').textContent=meta[g][1];el('tool-description').textContent='زیرمجموعه موردنظر را انتخاب کنید.';el('subtools').replaceChildren();groups[g].forEach((s,i)=>{const div=document.createElement('div');div.className='subtool';const icon=document.createElement('span');icon.className='subtool-icon';icon.textContent=subIcons[g][i]||'✦';const title=document.createElement('span');title.className='subtool-title';title.textContent=s;div.append(icon,title);div.addEventListener('click',()=>openSub(s));el('subtools').appendChild(div)});show('home-hero','none');show('features','none');show('about-section','none');show('tool-page','block');show('workspace','none');window.scrollTo(0,0)}
 function openSub(s){if(s==='فیلم و سریال چندسکانسی'){openStudio();return;}if(s==='گالری تصاویر'||s==='گالری ویدئوها'){openGallery(s==='گالری تصاویر'?'image':'video');return;}el('user-input').style.display='';el('run-button').style.display='';sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();academyPanel();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'&&!isUnsupported()?'block':'none');if(group==='video'&&!isUnsupported())refreshVideoConfig();show('image-settings',group==='image'?'block':'none');el('workspace').scrollIntoView({behavior:'smooth'})}
-// Studio 6.5.9: planning only; no video prediction or charges.
+// Studio 6.6.1: explicit numbered scenes, 30-second projects, and manual cost approval.
 function openStudio(){
- sub='فیلم و سریال چندسکانسی';show('workspace','block');show('reference-box','none');show('video-settings','none');show('image-settings','none');el('workspace-title').textContent='🎬 استودیوی فیلم و سریال — پیش‌تولید';el('user-input').style.display='none';el('run-button').style.display='none';
+ sub='فیلم و سریال چندسکانسی';show('workspace','block');show('reference-box','none');show('video-settings','none');show('image-settings','none');
+ el('workspace-title').textContent='🎬 استودیوی فیلم و سریال — پیش‌تولید';el('user-input').style.display='none';el('run-button').style.display='none';
  const host=el('result');host.replaceChildren();show('result','block');
- const wrap=document.createElement('div');wrap.dir='rtl';wrap.style.cssText='display:grid;gap:10px;max-width:700px';
- const info=document.createElement('p');info.textContent='طراحی فیلمنامه رایگان از نظر اعتبار Replicate است. پایین صفحه، آزمایش اختیاری تولید تنها یک سکانس ۵ ثانیه‌ای با هزینه Replicate اضافه شده است؛ تولید زنجیره‌ای هنوز فعال نیست.';wrap.append(info);
- const idea=document.createElement('textarea');idea.placeholder='داستان یا ایده فیلم را بنویسید';idea.rows=4;idea.style.width='100%';wrap.append(idea);
- const mode=document.createElement('select');[['live','فیلم واقعی'],['animation','انیمیشن']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;mode.append(o)});wrap.append(mode);
- const minutes=document.createElement('input');minutes.type='number';minutes.min='1';minutes.max='30';minutes.value='5';minutes.title='مدت فیلم به دقیقه';wrap.append(document.createTextNode('مدت تقریبی (دقیقه):'));wrap.append(minutes);
- const duration=document.createElement('select');[5,10].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v+' ثانیه برای هر سکانس';duration.append(o)});wrap.append(duration);
- const button=document.createElement('button');button.textContent='تهیه فیلمنامه و نقشه سکانس‌ها';wrap.append(button);
- const result=document.createElement('pre');result.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;text-align:right;font-family:inherit';wrap.append(result);
- const save=document.createElement('button');save.textContent='دریافت طرح به صورت فایل متنی';save.hidden=true;wrap.append(save);
- const key='aluniverse_studio_draft_v1';let output='';const prior=localStorage.getItem(key);if(prior){result.textContent=prior;output=prior;save.hidden=false;}
- save.onclick=()=>{const url=URL.createObjectURL(new Blob([output],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='aluniverse_studio_plan.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
- button.onclick=async()=>{const topic=idea.value.trim();const n=Number(minutes.value);if(!topic){result.textContent='ابتدا داستان را وارد کنید.';return;}if(!Number.isInteger(n)||n<1||n>30){result.textContent='مدت باید بین ۱ تا ۳۰ دقیقه باشد.';return;}
- const count=Math.ceil(n*60/Number(duration.value));if(count>100){result.textContent='برای جلوگیری از ناقص شدن پاسخ، مدت را کوتاه‌تر یا سکانس‌ها را ۱۰ ثانیه‌ای انتخاب کنید.';return;}
- button.disabled=true;result.textContent='در حال طراحی سکانس‌ها با Groq...';try{
- const message=`نقش: فیلمنامه‌نویس و مدیر پیش‌تولید. فقط متن فارسی. نوع اثر: ${mode.value==='animation'?'انیمیشن':'فیلم واقعی'}. مدت: ${n} دقیقه. طول هر سکانس: ${duration.value} ثانیه. تعداد تقریبی سکانس: ${count}. ایده: ${topic}. پاسخ را با عنوان اثر، خلاصه، شناسنامه ثابت شخصیت‌ها (چهره، اندام، لباس، صدا)، لوکیشن‌ها، قوانین پیوستگی و فهرست سکانس‌های شماره‌دار ارائه کن. برای هر سکانس زمان، رویداد، حرکت دوربین، گفت‌وگو، وضعیت آغاز و پایان و دستور حفظ هویت را ذکر کن. اگر تعداد زیاد است ابتدا طرح کلی و ۱۰ سکانس نخست را بده و صریحاً بنویس که ادامه نیاز به مرحله جدا دارد. هیچ ادعای تولید واقعی ویدئو نکن.`;
- const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'خطای طراحی فیلمنامه');output=String(data.answer||'');result.textContent=output;localStorage.setItem(key,output);save.hidden=!output;
- }catch(e){result.textContent='❌ '+e.message}finally{button.disabled=false}};
- // Explicit paid one-scene pilot. The password is kept in the input field only.
- const sep=document.createElement('hr');wrap.append(sep);
- const title=document.createElement('strong');title.textContent='آزمایش تولید یک سکانس ۵ ثانیه‌ای (هزینه‌دار)';wrap.append(title);
- const shot=document.createElement('textarea');shot.rows=3;shot.style.width='100%';shot.placeholder='شرح دقیق فقط یک سکانس، شخصیت‌ها، محیط و حرکت دوربین';wrap.append(shot);
- const pass=document.createElement('input');pass.type='password';pass.placeholder='رمز خصوصی گالری/بارگذاری';pass.autocomplete='off';wrap.append(pass);
- const confirm=document.createElement('label');const checkbox=document.createElement('input');checkbox.type='checkbox';confirm.append(checkbox,document.createTextNode(' هزینه تولید یک ویدئوی ۵ ثانیه‌ای از اعتبار Replicate را تأیید می‌کنم.'));wrap.append(confirm);
- const go=document.createElement('button');go.textContent='تولید آزمایشی فقط یک سکانس';wrap.append(go);
- const status=document.createElement('p');status.setAttribute('role','status');wrap.append(status);
- const videoArea=document.createElement('div');wrap.append(videoArea);
- let pilotId=null;let pending=false;
- go.onclick=async()=>{
-  if(pending)return;
-  if(shot.value.trim().length<12){status.textContent='شرح سکانس را کامل‌تر بنویسید.';return}
-  if(!pass.value){status.textContent='رمز خصوصی را وارد کنید.';return}
-  if(!checkbox.checked){status.textContent='ابتدا هزینه یک سکانس را تأیید کنید.';return}
-  if(!pilotId)pilotId='studio_'+Date.now()+'_'+Math.random().toString(36).slice(2,14);
-  pending=true;go.disabled=true;status.textContent='در حال ثبت یک درخواست در Replicate...';videoArea.replaceChildren();
-  try{
-   const response=await fetch('/api/studio/pilot',{method:'POST',headers:{'Content-Type':'application/json','x-aluniverse-upload-password':pass.value},body:JSON.stringify({prompt:shot.value.trim(),request_id:pilotId,confirm_cost:true})});
-   const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'شروع ناموفق بود');
-   if(!data.prediction_id){status.textContent='درخواست در حال آماده‌سازی است؛ چند لحظه دیگر دوباره بررسی کنید.';return}
-   status.textContent='در حال ساخت سکانس...';
-   for(let i=0;i<45;i++){
-    await new Promise(resolve=>setTimeout(resolve,5000));
-    const r=await fetch('/api/media/status/'+encodeURIComponent(data.prediction_id)+'?kind=video');
-    const d=await r.json();if(!r.ok)throw Error(d.error||'خطای دریافت وضعیت');
-    if(d.status==='failed'||d.status==='canceled')throw Error(String(d.error||'تولید ناموفق بود'));
-    if(d.status==='succeeded'){
-     if(!d.url)throw Error('ویدئو تولید شد اما آدرس خروجی دریافت نشد.');
-     const v=document.createElement('video');v.controls=true;v.playsInline=true;v.style.cssText='width:100%;max-width:650px';v.src=d.url;videoArea.append(v);addVideoTime(v);
-     const link=document.createElement('a');link.href=d.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='دریافت فایل ویدئو';videoArea.append(link);
-     status.textContent=d.gallery_saved?'سکانس ساخته و در گالری ذخیره شد.':'سکانس ساخته شد؛ وضعیت ذخیره در گالری را بررسی کنید.';return;
-    }
-   }
+ const wrap=document.createElement('div');wrap.dir='rtl';wrap.style.cssText='display:grid;gap:12px;max-width:700px';
+ const make=(tag,label)=>{const e=document.createElement(tag);if(label)e.textContent=label;wrap.append(e);return e};
+ make('p','تهیه فیلمنامه از اعتبار Replicate استفاده نمی‌کند. تولید ویدئو جداگانه و فقط با تأیید هزینه انجام می‌شود.');
+ const fresh=make('button','🆕 پروژه جدید / پاک‌کردن طرح قبلی');fresh.type='button';
+ make('label','داستان یا ایده فیلم');const idea=make('textarea');idea.placeholder='داستان یا ایده فیلم را بنویسید';idea.rows=5;idea.style.width='100%';
+ make('label','نوع فیلم');const mode=make('select');[['live','فیلم واقعی'],['animation','انیمیشن']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;mode.append(o)});
+ make('label','مدت کل فیلم (دقیقه و ثانیه)');const timeRow=make('div');timeRow.style.cssText='display:flex;gap:8px;align-items:center';
+ const minuteInput=document.createElement('input');minuteInput.type='number';minuteInput.min='0';minuteInput.max='30';minuteInput.value='0';minuteInput.style.cssText='width:80px;min-width:0';
+ const secondInput=document.createElement('input');secondInput.type='number';secondInput.min='0';secondInput.max='59';secondInput.value='30';secondInput.style.cssText='width:80px;min-width:0';
+ timeRow.append(minuteInput,document.createTextNode('دقیقه'),secondInput,document.createTextNode('ثانیه'));
+ make('label','مدت هر سکانس');const duration=make('select');[5,10].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v+' ثانیه';duration.append(o)});duration.value='5';
+ const configNote=make('p');configNote.style.fontSize='14px';
+ let canTen=false;
+ fetch('/api/media/config',{cache:'no-store'}).then(r=>r.json()).then(d=>{canTen=!!d.video?.tenSecondsConfigured;configNote.textContent=canTen?'مدل ۱۰ ثانیه‌ای در Render فعال است؛ عملکرد واقعی و هزینه آن هنوز باید آزمایش شود.':'مدل ۱۰ ثانیه‌ای در Render فعال نیست. تهیه نقشه ۱۰ ثانیه‌ای ممکن است، ولی تولید پولی آن غیرفعال است.';updateDuration()}).catch(()=>{configNote.textContent='وضعیت مدل ۱۰ ثانیه‌ای قابل بررسی نیست؛ تولید پولی ۱۰ ثانیه‌ای غیرفعال است.';updateDuration()});
+ const countLabel=make('p');const button=make('button','تهیه فیلمنامه و نقشه سکانس‌ها');button.type='button';
+ const result=make('pre');result.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;text-align:right;font-family:inherit';
+ const save=make('button','دریافت طرح به صورت فایل متنی');save.hidden=true;
+ make('hr');make('strong','انتخاب سکانس برای آزمایش تولید ویدئو (هزینه‌دار)');
+ make('label','سکانس انتخابی');const sceneSelect=make('select');sceneSelect.disabled=true;
+ const sceneNote=make('p');sceneNote.textContent='ابتدا فیلمنامه جدید را تولید کنید تا سکانس‌ها قابل انتخاب شوند.';
+ make('label','پرامپت ارسالی (پیش از تأیید هزینه، بررسی و در صورت نیاز ویرایش کنید)');
+ const shot=make('textarea');shot.rows=9;shot.style.width='100%';shot.placeholder='پس از تهیه فیلمنامه، متن سکانس انتخابی اینجا قرار می‌گیرد.';
+ const paidTitle=make('p');const pass=make('input');pass.type='password';pass.placeholder='رمز خصوصی گالری/بارگذاری';pass.autocomplete='off';
+ const confirm=make('label');const checkbox=document.createElement('input');checkbox.type='checkbox';confirm.append(checkbox,document.createTextNode(' هزینه تولید فقط یک سکانس را از اعتبار Replicate تأیید می‌کنم.'));
+ const go=make('button','تولید آزمایشی فقط یک سکانس');go.type='button';const status=make('p');status.setAttribute('role','status');const videoArea=make('div');
+ const key='aluniverse_studio_draft_v1';let output='',scenes=[],pending=false,pilotId=null;
+ const faDigits=t=>String(t).replace(/[۰-۹]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c))).replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));
+ const getSeconds=()=>{const m=Number(minuteInput.value),s=Number(secondInput.value);return Number.isInteger(m)&&Number.isInteger(s)&&m>=0&&m<=30&&s>=0&&s<=59?m*60+s:NaN};
+ const updateDuration=()=>{const total=getSeconds(),size=Number(duration.value);const count=Math.ceil(total/size);countLabel.textContent=Number.isFinite(total)&&total>=5?`مدت کل: ${total} ثانیه | ${count} سکانس ${size} ثانیه‌ای${total%size?' (سکانس پایانی کوتاه‌تر)':''}`:'مدت کل باید دست‌کم ۵ ثانیه باشد.';paidTitle.textContent=`آزمایش تولید یک سکانس ${size} ثانیه‌ای (هزینه‌دار)`;go.disabled=pending||(size===10&&!canTen);if(size===10&&!canTen)sceneNote.textContent='طرح ۱۰ ثانیه‌ای قابل تهیه است، اما تولید آن تا فعال‌شدن مدل در Render غیرفعال است.';else if(scenes.length)sceneNote.textContent=`سکانس ${sceneSelect.selectedIndex+1} از ${scenes.length} — متن زیر قبل از پرداخت قابل ویرایش است.`;};
+ [minuteInput,secondInput,duration].forEach(x=>x.addEventListener('change',()=>{checkbox.checked=false;updateDuration()}));updateDuration();
+ const resetScenes=()=>{scenes=[];sceneSelect.replaceChildren();sceneSelect.disabled=true;shot.value='';checkbox.checked=false;pilotId=null;videoArea.replaceChildren();status.textContent='';sceneNote.textContent='برای انتخاب سکانس، ابتدا فیلمنامه را تولید کنید.';updateDuration()};
+ const parseScenes=text=>{const matches=[...text.matchAll(/<<<SCENE_(\d+)_START>>>([\s\S]*?)<<<SCENE_\1_END>>>/g)];return matches.map(m=>({number:Number(m[1]),text:m[2].trim()})).filter(x=>x.text.length>=20).sort((a,b)=>a.number-b.number)};
+ const setScene=()=>{const selected=scenes[sceneSelect.selectedIndex];if(!selected)return;const total=getSeconds(),size=Number(duration.value);const from=(selected.number-1)*size,to=Math.min(total,selected.number*size);const type=mode.value==='animation'?'انیمیشن':'فیلم واقعی';
+  shot.value=`سبک: ${type}، واقع‌گرایی و حرکت طبیعی.
+داستان و هویت ثابت شخصیت‌ها: ${idea.value.trim()}
+سکانس ${selected.number} از ${Math.ceil(total/size)}، زمان ${from} تا ${to} ثانیه:
+${selected.text}
+پیوستگی: چهره، اندام، لباس، اشیا و مکان مطابق شرح داستان حفظ شوند. از اولین فریم فقط صحنه واقعی، بدون نوشته و تیتراژ.`;checkbox.checked=false;pilotId=null;sceneNote.textContent=`سکانس ${selected.number} از ${Math.ceil(total/size)} | ${from} تا ${to} ثانیه. متن قابل ویرایش است.`;updateDuration()};
+ shot.addEventListener('input',()=>{if(!pending){pilotId=null;checkbox.checked=false;}});
+ sceneSelect.onchange=setScene;
+ const prior=localStorage.getItem(key);if(prior){output=prior;result.textContent=prior;save.hidden=false;sceneNote.textContent='فیلمنامه قبلی نمایش داده شده است. برای انتخاب خودکار سکانس‌ها، یک فیلمنامه جدید بسازید.';}
+ fresh.onclick=()=>{if(!window.confirm('داستان و فیلمنامه فعلی پاک شود؟ فایل‌های گالری حذف نمی‌شوند.'))return;localStorage.removeItem(key);idea.value='';output='';result.textContent='';save.hidden=true;minuteInput.value='0';secondInput.value='30';duration.value='5';resetScenes();};
+ save.onclick=()=>{if(!output)return;const url=URL.createObjectURL(new Blob([output],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='aluniverse_studio_plan.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+ button.onclick=async()=>{const topic=idea.value.trim(),total=getSeconds(),size=Number(duration.value),count=Math.ceil(total/size);if(!topic){result.textContent='ابتدا داستان را وارد کنید.';return;}if(!Number.isFinite(total)||total<5||total>1800){result.textContent='مدت باید بین ۵ ثانیه تا ۳۰ دقیقه باشد.';return;}if(count>100){result.textContent='برای این مدت، تعداد سکانس‌ها بیش از ۱۰۰ است؛ مدت را کوتاه‌تر یا سکانس‌ها را ۱۰ ثانیه‌ای کنید.';return;}
+  resetScenes();button.disabled=true;result.textContent='در حال تهیه فیلمنامه با Groq (بدون هزینه Replicate)...';
+  try{const planned=Math.min(count,10);const message=`شما فیلمنامه‌نویس و مدیر پیش‌تولید هستید. پاسخ فقط فارسی باشد. نوع اثر: ${mode.value==='animation'?'انیمیشن':'فیلم واقعی'}. مدت کل ${total} ثانیه، طول هر سکانس ${size} ثانیه، تعداد کل ${count}، اکنون ${planned} سکانس نخست را بنویس. داستان: ${topic}. ابتدا عنوان و شناسنامه ثابت شخصیت‌ها و محیط را بیاور. سپس دقیقاً ${planned} سکانس را با این قالب ماشینی، در خط جداگانه، بنویس: <<<SCENE_1_START>>> شرح صحنه اول شامل چهره، لباس، مکان، عمل شخصیت، دوربین و آغاز و پایان <<<SCENE_1_END>>>؛ برای بعدی شماره 2 و به همین ترتیب. هیچ قالب یا شماره‌ای را حذف نکن. هر سکانس حداقل ۳۰ کلمه داشته باشد. از داستان منحرف نشو، شخصیت یا لباس بی‌ربط اختراع نکن. اگر سکانس‌ها بیش از ۱۰ هستند، صریحاً بنویس ادامه هنوز تولید نشده است. ادعای ساخت ویدئو نکن.`;
+   const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'خطای تهیه فیلمنامه');output=String(data.answer||'');result.textContent=output;localStorage.setItem(key,output);save.hidden=!output;
+   scenes=parseScenes(output);scenes.forEach(x=>{const opt=document.createElement('option');opt.value=x.number;const from=(x.number-1)*size,to=Math.min(total,x.number*size);opt.textContent=`سکانس ${x.number} از ${count} | ${from} تا ${to} ثانیه`;sceneSelect.append(opt)});sceneSelect.disabled=!scenes.length;
+   if(scenes.length){setScene();if(scenes.length<planned)sceneNote.textContent+=` | توجه: فقط ${scenes.length} سکانس با قالب معتبر استخراج شد.`;}else{sceneNote.textContent='⚠️ پاسخ هوش مصنوعی قالب سکانس‌ها را رعایت نکرد. هیچ پرامپتی به‌طور خودکار انتخاب نشد؛ برای جلوگیری از هزینه اشتباه دوباره فیلمنامه تهیه کنید.';}
+  }catch(e){result.textContent='❌ '+e.message}finally{button.disabled=false}};
+ go.onclick=async()=>{if(pending)return;const size=Number(duration.value);if(size===10&&!canTen){status.textContent='مدل ۱۰ ثانیه‌ای فعال نیست؛ هزینه‌ای ثبت نشد.';return}if(!scenes.length||sceneSelect.disabled){status.textContent='ابتدا فیلمنامه و سکانس معتبر تولید کنید.';return}if(shot.value.trim().length<80){status.textContent='پرامپت سکانس ناقص است؛ هزینه‌ای ثبت نشد.';return}if(!pass.value){status.textContent='رمز خصوصی را وارد کنید.';return}if(!checkbox.checked){status.textContent='ابتدا هزینه فقط یک سکانس را تأیید کنید.';return}
+  if(!pilotId)pilotId='studio_'+Date.now()+'_'+Math.random().toString(36).slice(2,14);pending=true;go.disabled=true;status.textContent='در حال ثبت فقط یک درخواست در Replicate...';videoArea.replaceChildren();
+  try{const response=await fetch('/api/studio/pilot',{method:'POST',headers:{'Content-Type':'application/json','x-aluniverse-upload-password':pass.value},body:JSON.stringify({prompt:shot.value.trim(),duration:size,request_id:pilotId,confirm_cost:true})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'شروع ناموفق بود');if(!data.prediction_id){status.textContent='درخواست در حال آماده‌سازی است؛ دوباره تولید را نزنید.';return}
+   status.textContent=`در حال ساخت سکانس ${size} ثانیه‌ای...`;for(let i=0;i<45;i++){await new Promise(resolve=>setTimeout(resolve,5000));const r=await fetch('/api/media/status/'+encodeURIComponent(data.prediction_id)+'?kind=video');const d=await r.json();if(!r.ok)throw Error(d.error||'خطای دریافت وضعیت');if(d.status==='failed'||d.status==='canceled')throw Error(String(d.error||'تولید ناموفق بود'));if(d.status==='succeeded'){if(!d.url)throw Error('ویدئو تولید شد اما آدرس خروجی دریافت نشد.');const v=document.createElement('video');v.controls=true;v.playsInline=true;v.style.cssText='width:100%;max-width:650px';v.src=d.url;videoArea.append(v);addVideoTime(v);const link=document.createElement('a');link.href=d.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='دریافت فایل ویدئو';videoArea.append(link);status.textContent=d.gallery_saved?'سکانس ساخته و در گالری ذخیره شد.':'سکانس ساخته شد؛ وضعیت ذخیره در گالری را بررسی کنید.';return;}}
    status.textContent='پردازش طول کشیده است؛ شناسه: '+data.prediction_id;
-  }catch(e){status.textContent='❌ '+e.message}finally{pending=false;go.disabled=false}
+  }catch(e){status.textContent='❌ '+e.message}finally{pending=false;go.disabled=(Number(duration.value)===10&&!canTen);checkbox.checked=false}
  };
  host.append(wrap);el('workspace').scrollIntoView({behavior:'smooth'});
 }
