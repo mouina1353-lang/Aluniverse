@@ -25,33 +25,56 @@ async function openGallery(kind){
  sub=kind==='image'?'گالری تصاویر':'گالری ویدئوها';el('workspace-title').textContent=sub;
  show('workspace','block');show('reference-box','none');show('video-settings','none');show('image-settings','none');
  el('user-input').style.display='none';el('run-button').style.display='none';el('result').replaceChildren();show('result','block');
- const note=document.createElement('p');note.textContent='گالری این دستگاه؛ فایل‌ها در Supabase نگهداری می‌شوند. خروجی‌های قدیمی که شناسه‌شان ثبت نشده خودکار نمایش داده نمی‌شوند.';el('result').append(note);
+ const controls=document.createElement('div');controls.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:12px';
+ const password=document.createElement('input');password.type='password';password.placeholder='رمز خصوصی گالری';password.autocomplete='off';password.style.cssText='width:100%;padding:12px;margin-bottom:8px';
+ const refresh=document.createElement('button');refresh.type='button';refresh.textContent='نمایش فایل‌های Supabase';refresh.style.cssText='padding:12px;margin:8px';
+ const feedback=document.createElement('p');const remote=document.createElement('div');
+ const more=document.createElement('button');more.type='button';more.textContent='نمایش فایل‌های بیشتر';more.style.cssText='padding:12px;margin:8px';more.hidden=true;
+ controls.append(password,refresh,feedback,remote,more);el('result').append(controls);
+ let page=0,loading=false;
+ const load=async(reset=true)=>{
+  if(loading)return;
+  if(!password.value){feedback.textContent='ابتدا رمز خصوصی را وارد کنید.';return}
+  loading=true;refresh.disabled=true;more.disabled=true;feedback.textContent='در حال دریافت فهرست...';
+  try{
+   const target=reset?0:page;
+   const r=await fetch('/api/gallery/list?kind='+kind+'&page='+target,{headers:{'x-aluniverse-upload-password':password.value},cache:'no-store'});
+   const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'خطا');
+   if(reset)remote.replaceChildren();
+   for(const item of data.items){
+    const box=document.createElement('div');box.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:10px;overflow:hidden';
+    const name=document.createElement('p');name.textContent=item.name;name.style.overflowWrap='anywhere';box.append(name);
+    const media=document.createElement(kind==='image'?'img':'video');media.src=item.url;media.style.cssText='max-width:100%;max-height:320px;border-radius:8px';
+    if(kind==='video'){media.controls=true;media.playsInline=true;media.preload='metadata';}else{media.loading='lazy';media.alt='تصویر گالری';}
+    box.append(media);if(kind==='video')addVideoTime(media);
+    const actions=document.createElement('div');actions.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin:10px 0';
+    const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت فایل';
+    const remove=document.createElement('button');remove.type='button';remove.textContent='حذف فایل';remove.style.cssText='padding:8px';
+    remove.onclick=async()=>{
+     if(!confirm('این فایل از Supabase به‌طور دائمی حذف شود؟\n'+item.name))return;
+     remove.disabled=true;
+     try{const r=await fetch('/api/gallery/file',{method:'DELETE',headers:{'Content-Type':'application/json','x-aluniverse-upload-password':password.value},body:JSON.stringify({kind,name:item.name})});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطا');box.remove();feedback.textContent='فایل حذف شد.';}catch(e){feedback.textContent='❌ '+e.message;remove.disabled=false}
+    };
+    actions.append(link,remove);box.append(actions);remote.append(box);
+   }
+   page=target+1;more.hidden=!data.has_more;
+   feedback.textContent=data.items.length?`نمایش ${remote.children.length} فایل`:'فایل دیگری پیدا نشد.';
+  }catch(e){feedback.textContent='❌ '+e.message}
+  finally{loading=false;refresh.disabled=false;more.disabled=false}
+ };
+ refresh.onclick=()=>load(true);more.onclick=()=>load(false);
+ password.addEventListener('change',()=>load(true));
+ password.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();load(true)}});
  if(kind==='video'){
-  const controls=document.createElement('div');controls.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:12px';
-  const password=document.createElement('input');password.type='password';password.placeholder='رمز خصوصی بارگذاری';password.autocomplete='off';password.style.cssText='width:100%;padding:12px;margin-bottom:8px';
   const file=document.createElement('input');file.type='file';file.accept='video/mp4,video/webm';file.style.cssText='width:100%;margin:8px 0';
   const send=document.createElement('button');send.type='button';send.textContent='بارگذاری ویدئو از گوشی';send.style.cssText='padding:12px;margin:8px 0';
-  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='نمایش فایل‌های Supabase';refresh.style.cssText='padding:12px;margin:8px';
-  const feedback=document.createElement('p');
-  controls.append(password,file,send,refresh,feedback);el('result').append(controls);
-  const load=async()=>{
-   if(!password.value){feedback.textContent='ابتدا رمز خصوصی را وارد کنید.';return}
-   feedback.textContent='در حال دریافت فهرست...';
-   try{const r=await fetch('/api/gallery/list?kind=video',{headers:{'x-aluniverse-upload-password':password.value}});const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'خطا');
-    controls.querySelectorAll('.gallery-remote').forEach(x=>x.remove());
-    for(const item of data.items){const box=document.createElement('div');box.className='gallery-remote';box.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd';
-      const name=document.createElement('p');name.textContent=item.name;const video=document.createElement('video');video.controls=true;video.playsInline=true;video.src=item.url;video.style.cssText='max-width:100%;max-height:320px';
-      const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت ویدئو';box.append(name,video,document.createElement('br'),link);addVideoTime(video);controls.append(box)}
-    feedback.textContent=data.items.length?`تعداد فایل‌ها: ${data.items.length}`:'فایلی در Supabase پیدا نشد.';
-   }catch(e){feedback.textContent='❌ '+e.message}
-  };
-  refresh.onclick=load;
+  controls.insertBefore(file,refresh);controls.insertBefore(send,refresh);
   send.onclick=async()=>{const f=file.files[0];if(!f){feedback.textContent='ابتدا فایل ویدئو را انتخاب کنید.';return}if(!password.value){feedback.textContent='رمز خصوصی را وارد کنید.';return}
    if(f.size>15*1024*1024){feedback.textContent='حداکثر حجم مجاز ۱۵ مگابایت است.';return}
-   send.disabled=true;feedback.textContent='در حال بارگذاری...';try{const r=await fetch('/api/gallery/upload',{method:'POST',headers:{'Content-Type':f.type||'video/mp4','x-aluniverse-upload-password':password.value},body:f});const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'خطا');feedback.textContent='بارگذاری موفق؛ در حال دریافت فهرست...';await load()}catch(e){feedback.textContent='❌ '+e.message}finally{send.disabled=false}};
+   send.disabled=true;feedback.textContent='در حال بارگذاری...';try{const r=await fetch('/api/gallery/upload',{method:'POST',headers:{'Content-Type':f.type||'video/mp4','x-aluniverse-upload-password':password.value},body:f});const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'خطا');feedback.textContent='بارگذاری موفق؛ در حال دریافت فهرست...';file.value='';await load(true)}catch(e){feedback.textContent='❌ '+e.message}finally{send.disabled=false}};
  }
  const entries=galleryItems().filter(x=>x.kind===kind);
- if(!entries.length){const p=document.createElement('p');p.textContent='هنوز خروجی ثبت‌شده‌ای در این دستگاه وجود ندارد.';el('result').append(p)}
+ if(entries.length){const title=document.createElement('p');title.textContent='خروجی‌های ثبت‌شده در همین گوشی:';el('result').append(title)}
  for(const item of entries){
   const box=document.createElement('div');box.style.cssText='padding:12px;margin:12px 0;border:1px solid #ddd;border-radius:12px';
   const label=document.createElement('p');label.textContent='شناسه: '+item.id;box.append(label);el('result').append(box);
