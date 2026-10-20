@@ -8,7 +8,7 @@ const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const supaUrl=()=>clean(process.env.SUPABASE_URL||process.env.SUPABASE_PROJECT_URL).replace(/\/$/,'');
 const supaKey=()=>clean(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY);
 const galleryConfigured=()=>!!(supaUrl()&&supaKey());
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.5.4',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.5.5',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
@@ -60,9 +60,24 @@ function mediaHost(url){try{const u=new URL(url);return u.protocol==='https:'?u.
 function replicateMediaUrl(url){const host=mediaHost(url);return !!host&&(MEDIA_EXACT_HOSTS.has(host)||MEDIA_HOST_SUFFIXES.some(domain=>host===domain||host.endsWith('.'+domain)))}
 function assertReplicateMediaUrl(url,stage){if(!replicateMediaUrl(url)){const host=mediaHost(url)||'(invalid URL)';console.error('GALLERY BLOCKED MEDIA HOST',stage,host);throw Error('دامنه فایل خروجی Replicate معتبر نیست: '+host)}}
 function mediaSpec(kind,contentType,url){const image=kind==='image';const bucket=image?'aluniverse-images':'aluniverse-videos';const ct=String(contentType||'').split(';')[0].trim().toLowerCase();if(image){if(ct==='image/jpeg')return {bucket,mime:ct,ext:'jpg'};if(ct==='image/webp')return {bucket,mime:ct,ext:'webp'};if(ct==='image/png')return {bucket,mime:ct,ext:'png'};throw Error('فرمت تصویر خروجی برای گالری پشتیبانی نمی‌شود.')}if(ct==='video/mp4')return {bucket,mime:ct,ext:'mp4'};if(ct==='video/webm')return {bucket,mime:ct,ext:'webm'};throw Error('فرمت ویدئو خروجی برای گالری پشتیبانی نمی‌شود.')}
+function signedLink(raw){
+ const value=String(raw||'');
+ const baseUrl=supaUrl();
+ const path=/^https:\/\//i.test(value)?value:(value.startsWith('/storage/v1/')?value:'/storage/v1/'+value.replace(/^\/+/,''));
+ const parsed=new URL(path,baseUrl);
+ if(parsed.origin!==new URL(baseUrl).origin)throw Error('دامنه لینک Supabase نامعتبر است.');
+ return parsed.toString();
+}
+async function freshGalleryLink(item){
+ if(process.env.SUPABASE_BUCKETS_PUBLIC==='true')return item;
+ const storagePath=`${item.bucket}/${item.path}`;
+ const signed=await request(`${supaUrl()}/storage/v1/object/sign/${storagePath}`,{method:'POST',headers:{apikey:supaKey(),Authorization:`Bearer ${supaKey()}`,'Content-Type':'application/json'},body:JSON.stringify({expiresIn:3600})},20000);
+ if(!signed.signedURL)throw Error('تمدید لینک گالری ناموفق بود.');
+ return {...item,access_url:signedLink(signed.signedURL)};
+}
 async function saveToGallery(predictionId,kind,originalUrl){
   if(!galleryConfigured())return null;
-  if(savedOutputs.has(predictionId))return savedOutputs.get(predictionId);
+  if(savedOutputs.has(predictionId))return freshGalleryLink(savedOutputs.get(predictionId));
   if(savingOutputs.has(predictionId))return savingOutputs.get(predictionId);
   const task=(async()=>{
     assertReplicateMediaUrl(originalUrl,'original');
@@ -86,7 +101,7 @@ async function saveToGallery(predictionId,kind,originalUrl){
     if(process.env.SUPABASE_BUCKETS_PUBLIC!=='true'){
       const signed=await request(`${supaUrl()}/storage/v1/object/sign/${storagePath}`,{method:'POST',headers:{apikey:supaKey(),Authorization:`Bearer ${supaKey()}`,'Content-Type':'application/json'},body:JSON.stringify({expiresIn:3600})},20000);
       if(!signed.signedURL)throw Error('فایل ذخیره شد ولی لینک مشاهده موقت ایجاد نشد.');
-      accessUrl=new URL(signed.signedURL,supaUrl()).toString();
+      accessUrl=signedLink(signed.signedURL);
     }
     const result={bucket:spec.bucket,path:filename,access_url:accessUrl};
     savedOutputs.set(predictionId,result);
@@ -143,4 +158,4 @@ app.get('/api/media/status/:id',async(req,res)=>{
 });
 for(const kind of ['image','video','animation'])app.post(`/api/${kind}`,(_,res)=>res.status(409).json({success:false,error:'لطفاً صفحه را تازه‌سازی کنید تا نسخه جدید بارگذاری شود.'}));
 setInterval(()=>{for(const [k,v] of jobs)if(Date.now()-v.created>24*60*60*1000)jobs.delete(k);if(savedOutputs.size>2000)savedOutputs.clear()},3600000).unref();
-app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.5.4 ready'));
+app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.5.5 ready'));
