@@ -12,7 +12,7 @@ function openStudio(){
  sub='فیلم و سریال چندسکانسی';show('workspace','block');show('reference-box','none');show('video-settings','none');show('image-settings','none');el('workspace-title').textContent='🎬 استودیوی فیلم و سریال — پیش‌تولید';el('user-input').style.display='none';el('run-button').style.display='none';
  const host=el('result');host.replaceChildren();show('result','block');
  const wrap=document.createElement('div');wrap.dir='rtl';wrap.style.cssText='display:grid;gap:10px;max-width:700px';
- const info=document.createElement('p');info.textContent='این بخش فقط فیلمنامه، شناسنامه شخصیت‌ها و نقشه سکانس‌ها را تولید می‌کند؛ هنوز فیلم یا انیمیشن تولید نمی‌کند و هزینه Replicate ندارد.';wrap.append(info);
+ const info=document.createElement('p');info.textContent='طراحی فیلمنامه رایگان از نظر اعتبار Replicate است. پایین صفحه، آزمایش اختیاری تولید تنها یک سکانس ۵ ثانیه‌ای با هزینه Replicate اضافه شده است؛ تولید زنجیره‌ای هنوز فعال نیست.';wrap.append(info);
  const idea=document.createElement('textarea');idea.placeholder='داستان یا ایده فیلم را بنویسید';idea.rows=4;idea.style.width='100%';wrap.append(idea);
  const mode=document.createElement('select');[['live','فیلم واقعی'],['animation','انیمیشن']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;mode.append(o)});wrap.append(mode);
  const minutes=document.createElement('input');minutes.type='number';minutes.min='1';minutes.max='30';minutes.value='5';minutes.title='مدت فیلم به دقیقه';wrap.append(document.createTextNode('مدت تقریبی (دقیقه):'));wrap.append(minutes);
@@ -28,6 +28,43 @@ function openStudio(){
  const message=`نقش: فیلمنامه‌نویس و مدیر پیش‌تولید. فقط متن فارسی. نوع اثر: ${mode.value==='animation'?'انیمیشن':'فیلم واقعی'}. مدت: ${n} دقیقه. طول هر سکانس: ${duration.value} ثانیه. تعداد تقریبی سکانس: ${count}. ایده: ${topic}. پاسخ را با عنوان اثر، خلاصه، شناسنامه ثابت شخصیت‌ها (چهره، اندام، لباس، صدا)، لوکیشن‌ها، قوانین پیوستگی و فهرست سکانس‌های شماره‌دار ارائه کن. برای هر سکانس زمان، رویداد، حرکت دوربین، گفت‌وگو، وضعیت آغاز و پایان و دستور حفظ هویت را ذکر کن. اگر تعداد زیاد است ابتدا طرح کلی و ۱۰ سکانس نخست را بده و صریحاً بنویس که ادامه نیاز به مرحله جدا دارد. هیچ ادعای تولید واقعی ویدئو نکن.`;
  const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'خطای طراحی فیلمنامه');output=String(data.answer||'');result.textContent=output;localStorage.setItem(key,output);save.hidden=!output;
  }catch(e){result.textContent='❌ '+e.message}finally{button.disabled=false}};
+ // Explicit paid one-scene pilot. The password is kept in the input field only.
+ const sep=document.createElement('hr');wrap.append(sep);
+ const title=document.createElement('strong');title.textContent='آزمایش تولید یک سکانس ۵ ثانیه‌ای (هزینه‌دار)';wrap.append(title);
+ const shot=document.createElement('textarea');shot.rows=3;shot.style.width='100%';shot.placeholder='شرح دقیق فقط یک سکانس، شخصیت‌ها، محیط و حرکت دوربین';wrap.append(shot);
+ const pass=document.createElement('input');pass.type='password';pass.placeholder='رمز خصوصی گالری/بارگذاری';pass.autocomplete='off';wrap.append(pass);
+ const confirm=document.createElement('label');const checkbox=document.createElement('input');checkbox.type='checkbox';confirm.append(checkbox,document.createTextNode(' هزینه تولید یک ویدئوی ۵ ثانیه‌ای از اعتبار Replicate را تأیید می‌کنم.'));wrap.append(confirm);
+ const go=document.createElement('button');go.textContent='تولید آزمایشی فقط یک سکانس';wrap.append(go);
+ const status=document.createElement('p');status.setAttribute('role','status');wrap.append(status);
+ const videoArea=document.createElement('div');wrap.append(videoArea);
+ let pilotId=null;let pending=false;
+ go.onclick=async()=>{
+  if(pending)return;
+  if(shot.value.trim().length<12){status.textContent='شرح سکانس را کامل‌تر بنویسید.';return}
+  if(!pass.value){status.textContent='رمز خصوصی را وارد کنید.';return}
+  if(!checkbox.checked){status.textContent='ابتدا هزینه یک سکانس را تأیید کنید.';return}
+  if(!pilotId)pilotId='studio_'+Date.now()+'_'+Math.random().toString(36).slice(2,14);
+  pending=true;go.disabled=true;status.textContent='در حال ثبت یک درخواست در Replicate...';videoArea.replaceChildren();
+  try{
+   const response=await fetch('/api/studio/pilot',{method:'POST',headers:{'Content-Type':'application/json','x-aluniverse-upload-password':pass.value},body:JSON.stringify({prompt:shot.value.trim(),request_id:pilotId,confirm_cost:true})});
+   const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'شروع ناموفق بود');
+   if(!data.prediction_id){status.textContent='درخواست در حال آماده‌سازی است؛ چند لحظه دیگر دوباره بررسی کنید.';return}
+   status.textContent='در حال ساخت سکانس...';
+   for(let i=0;i<45;i++){
+    await new Promise(resolve=>setTimeout(resolve,5000));
+    const r=await fetch('/api/media/status/'+encodeURIComponent(data.prediction_id)+'?kind=video');
+    const d=await r.json();if(!r.ok)throw Error(d.error||'خطای دریافت وضعیت');
+    if(d.status==='failed'||d.status==='canceled')throw Error(String(d.error||'تولید ناموفق بود'));
+    if(d.status==='succeeded'){
+     if(!d.url)throw Error('ویدئو تولید شد اما آدرس خروجی دریافت نشد.');
+     const v=document.createElement('video');v.controls=true;v.playsInline=true;v.style.cssText='width:100%;max-width:650px';v.src=d.url;videoArea.append(v);addVideoTime(v);
+     const link=document.createElement('a');link.href=d.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='دریافت فایل ویدئو';videoArea.append(link);
+     status.textContent=d.gallery_saved?'سکانس ساخته و در گالری ذخیره شد.':'سکانس ساخته شد؛ وضعیت ذخیره در گالری را بررسی کنید.';return;
+    }
+   }
+   status.textContent='پردازش طول کشیده است؛ شناسه: '+data.prediction_id;
+  }catch(e){status.textContent='❌ '+e.message}finally{pending=false;go.disabled=false}
+ };
  host.append(wrap);el('workspace').scrollIntoView({behavior:'smooth'});
 }
 const galleryKey='aluniverse_gallery_history_v1';

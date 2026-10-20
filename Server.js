@@ -8,7 +8,7 @@ const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const supaUrl=()=>clean(process.env.SUPABASE_URL||process.env.SUPABASE_PROJECT_URL).replace(/\/$/,'');
 const supaKey=()=>clean(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY);
 const galleryConfigured=()=>!!(supaUrl()&&supaKey());
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.5.8',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.0',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
@@ -169,6 +169,31 @@ app.delete('/api/gallery/file',async(req,res)=>{
   res.json({success:true});
  }catch(e){console.error('GALLERY DELETE ERROR',e.message);res.status(502).json({success:false,error:'حذف فایل انجام نشد.'})}
 });
+// Studio pilot: a single explicitly approved, password-gated 5-second prediction.
+// No automatic batch execution; one request ID creates at most one prediction per process.
+const studioStarts=new Map();
+app.post('/api/studio/pilot',async(req,res)=>{
+ try{
+  if(!uploadAuthorized(req))return res.status(401).json({success:false,error:'رمز خصوصی نادرست است.'});
+  if(req.body?.confirm_cost!==true)return res.status(400).json({success:false,error:'تأیید هزینه تولید لازم است.'});
+  const prompt=String(req.body?.prompt||'').trim();
+  if(prompt.length<12||prompt.length>2500)return res.status(400).json({success:false,error:'توضیح سکانس باید بین ۱۲ تا ۲۵۰۰ کاراکتر باشد.'});
+  const id=String(req.body?.request_id||'');
+  if(!/^[a-zA-Z0-9_-]{16,90}$/.test(id))return res.status(400).json({success:false,error:'شناسه درخواست نامعتبر است.'});
+  if(studioStarts.has(id))return res.json({success:true,...studioStarts.get(id)});
+  // Reserve ID before the first await so parallel clicks cannot create two predictions.
+  studioStarts.set(id,{status:'preparing',created:Date.now()});
+  try{
+   const english=await translatePrompt(prompt);
+   const model=models.video;
+   const prediction=await request(`${base}/models/${model}/predictions`,{method:'POST',headers:replicateHeaders(),body:JSON.stringify({input:predictionInput('video',english,null,'16:9',5)})},45000);
+   if(!prediction.id)throw Error('شناسه Replicate دریافت نشد.');
+   const item={status:prediction.status,prediction_id:prediction.id,created:Date.now()};
+   studioStarts.set(id,item);
+   return res.json({success:true,...item});
+  }catch(e){studioStarts.delete(id);throw e}
+ }catch(e){console.error('STUDIO PILOT',e.message);res.status(502).json({success:false,error:e.message})}
+});
 app.get('/api/media/config',(_,res)=>res.json({success:true,video:{model:models.video,durations:tenConfigured()?[5,10]:[5],tenSecondsConfigured:tenConfigured(),resolution:['720p'],fps:[25],ratios:['16:9'],note:'ویدئوی ۱۰ ثانیه‌ای با Wan 2.2 فعال و آزمایش شده است. مدل ۵ ثانیه‌ای بدون تغییر باقی است.'},image:{ratios:[...supportedRatios],editConfigured:!!models.image_edit},gallery:{configured:galleryConfigured()}}));
 app.post('/api/media/start',async(req,res)=>{
   try{
@@ -214,5 +239,5 @@ app.get('/api/media/status/:id',async(req,res)=>{
   }catch(e){console.error('MEDIA STATUS ERROR',e.message);res.status(502).json({success:false,error:e.message});}
 });
 for(const kind of ['image','video','animation'])app.post(`/api/${kind}`,(_,res)=>res.status(409).json({success:false,error:'لطفاً صفحه را تازه‌سازی کنید تا نسخه جدید بارگذاری شود.'}));
-setInterval(()=>{for(const [k,v] of jobs)if(Date.now()-v.created>24*60*60*1000)jobs.delete(k);if(savedOutputs.size>2000)savedOutputs.clear()},3600000).unref();
-app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.5.8 ready'));
+setInterval(()=>{for(const [k,v] of jobs)if(Date.now()-v.created>24*60*60*1000)jobs.delete(k);if(savedOutputs.size>2000)savedOutputs.clear();for(const [k,v] of studioStarts)if(Date.now()-v.created>24*60*60*1000)studioStarts.delete(k)},3600000).unref();
+app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.6.0 ready'));
