@@ -9,6 +9,16 @@ function openGroup(g){group=g;sub='';el('tool-icon').textContent=meta[g][0];el('
 function openSub(s){if(s==='گالری تصاویر'||s==='گالری ویدئوها'){openGallery(s==='گالری تصاویر'?'image':'video');return;}el('user-input').style.display='';el('run-button').style.display='';sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();academyPanel();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'&&!isUnsupported()?'block':'none');if(group==='video'&&!isUnsupported())refreshVideoConfig();show('image-settings',group==='image'?'block':'none');el('workspace').scrollIntoView({behavior:'smooth'})}
 const galleryKey='aluniverse_gallery_history_v1';
 function galleryItems(){try{return JSON.parse(localStorage.getItem(galleryKey)||'[]')}catch{return []}}
+function addVideoTime(video){
+ video.preload='metadata';
+ const timer=document.createElement('div');timer.dir='ltr';timer.setAttribute('aria-label','زمان پخش ویدئو');
+ timer.style.cssText='font:600 15px sans-serif;text-align:center;direction:ltr;padding:7px 0;color:#24126a';
+ const format=seconds=>{if(!Number.isFinite(seconds)||seconds<0)return '--:--';const n=Math.floor(seconds);return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
+ const update=()=>{timer.textContent=format(video.currentTime)+' / '+format(video.duration)};
+ ['loadedmetadata','durationchange','timeupdate','seeked','emptied'].forEach(event=>video.addEventListener(event,update));
+ video.addEventListener('error',()=>{timer.textContent='زمان ویدئو در دسترس نیست'});
+ update();video.insertAdjacentElement('afterend',timer);
+}
 function rememberGallery(id,kind){if(!/^[a-zA-Z0-9_-]{10,100}$/.test(id))return;const entries=galleryItems().filter(x=>x.id!==id);entries.unshift({id,kind});localStorage.setItem(galleryKey,JSON.stringify(entries.slice(0,100)))}
 if(!localStorage.getItem('aluniverse_rose_imported')){rememberGallery('20rgz3gwm1rzr0d1b0jvgfqv2g','image');localStorage.setItem('aluniverse_rose_imported','1')}
 async function openGallery(kind){
@@ -31,7 +41,7 @@ async function openGallery(kind){
     controls.querySelectorAll('.gallery-remote').forEach(x=>x.remove());
     for(const item of data.items){const box=document.createElement('div');box.className='gallery-remote';box.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd';
       const name=document.createElement('p');name.textContent=item.name;const video=document.createElement('video');video.controls=true;video.playsInline=true;video.src=item.url;video.style.cssText='max-width:100%;max-height:320px';
-      const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت ویدئو';box.append(name,video,document.createElement('br'),link);controls.append(box)}
+      const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت ویدئو';box.append(name,video,document.createElement('br'),link);addVideoTime(video);controls.append(box)}
     feedback.textContent=data.items.length?`تعداد فایل‌ها: ${data.items.length}`:'فایلی در Supabase پیدا نشد.';
    }catch(e){feedback.textContent='❌ '+e.message}
   };
@@ -47,7 +57,7 @@ async function openGallery(kind){
   const label=document.createElement('p');label.textContent='شناسه: '+item.id;box.append(label);el('result').append(box);
   try{const r=await fetch('/api/media/status/'+encodeURIComponent(item.id)+'?kind='+kind,{cache:'no-store'});const data=await r.json();
    if(!r.ok||data.status!=='succeeded'||!/^https:\/\//.test(data.url||''))throw Error(data.error||'خروجی فعلاً در دسترس نیست');
-   const media=document.createElement(kind==='image'?'img':'video');media.src=data.url;media.style.cssText='max-width:100%;max-height:350px;border-radius:10px';if(kind==='video'){media.controls=true;media.playsInline=true}box.append(media);
+   const media=document.createElement(kind==='image'?'img':'video');media.src=data.url;media.style.cssText='max-width:100%;max-height:350px;border-radius:10px';if(kind==='video'){media.controls=true;media.playsInline=true}box.append(media);if(kind==='video')addVideoTime(media);
    const link=document.createElement('a');link.href=data.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت فایل';box.append(document.createElement('br'),link);
    if(data.gallery_saved===false){const warning=document.createElement('p');warning.textContent='⚠️ ذخیره دائمی تأیید نشده است.';box.append(warning)}
   }catch(e){const p=document.createElement('p');p.textContent='خطا: '+e.message;box.append(p)}
@@ -129,7 +139,7 @@ function displayMedia(data,kind){
   const url=data.url||data.image||data.video;if(!/^https:\/\//.test(url||''))throw Error('آدرس خروجی معتبر نیست.');
   el('result').replaceChildren();const media=document.createElement(kind==='image'?'img':'video');media.src=url;
   if(kind!=='image'){media.controls=true;media.playsInline=true;media.preload='metadata';}media.alt='خروجی Aluniverse';
-  el('result').appendChild(media);const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='مشاهده / دریافت خروجی';el('result').appendChild(a);show('result','block');
+  el('result').appendChild(media);if(kind!=='image')addVideoTime(media);const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='مشاهده / دریافت خروجی';el('result').appendChild(a);show('result','block');
 }
 function finish(){busy=false;el('run-button').disabled=false;el('run-button').textContent='اجرای ابزار';}
 async function follow(id,kind){
