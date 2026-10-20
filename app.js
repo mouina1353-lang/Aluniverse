@@ -7,7 +7,21 @@ const el=id=>document.getElementById(id);let group='',sub='',busy=false,activeJo
 function show(id,value){el(id).style.display=value}
 function openGroup(g){group=g;sub='';el('tool-icon').textContent=meta[g][0];el('tool-title').textContent=meta[g][1];el('tool-description').textContent='زیرمجموعه موردنظر را انتخاب کنید.';el('subtools').replaceChildren();groups[g].forEach((s,i)=>{const div=document.createElement('div');div.className='subtool';const icon=document.createElement('span');icon.className='subtool-icon';icon.textContent=subIcons[g][i]||'✦';const title=document.createElement('span');title.className='subtool-title';title.textContent=s;div.append(icon,title);div.addEventListener('click',()=>openSub(s));el('subtools').appendChild(div)});show('home-hero','none');show('features','none');show('about-section','none');show('tool-page','block');show('workspace','none');window.scrollTo(0,0)}
 function openSub(s){if(s==='فیلم و سریال چندسکانسی'){openStudio();return;}if(s==='گالری تصاویر'||s==='گالری ویدئوها'){openGallery(s==='گالری تصاویر'?'image':'video');return;}el('user-input').style.display='';el('run-button').style.display='';sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();academyPanel();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'&&!isUnsupported()?'block':'none');if(group==='video'&&!isUnsupported())refreshVideoConfig();show('image-settings',group==='image'?'block':'none');el('workspace').scrollIntoView({behavior:'smooth'})}
-// Studio 6.6.1: explicit numbered scenes, 30-second projects, and manual cost approval.
+// Studio 6.6.5: keep extracted PNGs in this browser without exposing gallery secrets.
+function saveStudioFrameLocally(sceneNumber, predictionId, pngBlob){
+ return new Promise((resolve,reject)=>{
+  if(!window.indexedDB)return reject(Error('ذخیره محلی در این مرورگر پشتیبانی نمی‌شود'));
+  const open=indexedDB.open('aluniverse_studio_frames_v1',1);
+  open.onupgradeneeded=()=>{const db=open.result;if(!db.objectStoreNames.contains('frames'))db.createObjectStore('frames',{keyPath:'id'})};
+  open.onerror=()=>reject(Error('دسترسی به حافظه مرورگر ممکن نشد'));
+  open.onsuccess=()=>{const db=open.result;const tx=db.transaction('frames','readwrite');
+   tx.objectStore('frames').put({id:predictionId,scene:sceneNumber,created:Date.now(),blob:pngBlob});
+   tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(Error('ذخیره فریم در مرورگر ناموفق بود'))};
+  };
+ });
+}
+const naturalMotionInstruction='حرکت در زمان واقعی با سرعت عادی 1x؛ بدون اسلوموشن، کش‌آمدن زمان، گام‌های تکراری یا حرکت مکانیکی. برای انسان: جابه‌جایی وزن، شتاب و کاهش سرعت طبیعی، حرکت مفاصل و تأثیر جاذبه واقع‌گرایانه. برای اسب و حیوانات: ترتیب واقعی گام‌ها و تماس سم با زمین، انتقال وزن بدن، حرکت طبیعی سر و گردن و یال و دم؛ بدون لغزش پا و تکرار چرخه مصنوعی. دوربین روان، بدون پرش و اعوجاج اندام. این دستور کیفیت را تضمین نمی‌کند.';
+// Studio 6.6.5: explicit numbered scenes, 30-second projects, and manual cost approval.
 function openStudio(){
  sub='فیلم و سریال چندسکانسی';show('workspace','block');show('reference-box','none');show('video-settings','none');show('image-settings','none');
  el('workspace-title').textContent='🎬 استودیوی فیلم و سریال — پیش‌تولید';el('user-input').style.display='none';el('run-button').style.display='none';
@@ -35,6 +49,9 @@ function openStudio(){
  make('label','پرامپت ارسالی (پیش از تأیید هزینه، بررسی و در صورت نیاز ویرایش کنید)');
  const shot=make('textarea');shot.rows=9;shot.style.width='100%';shot.placeholder='پس از تهیه فیلمنامه، متن سکانس انتخابی اینجا قرار می‌گیرد.';
  make('label','شناسنامه ثابت شخصیت‌ها و محیط (بدون شرح اتفاقات سکانس‌های بعدی)');const identity=make('textarea');identity.rows=4;identity.placeholder='مثلاً پسر هفت‌ساله با پیراهن آبی، شلوار مشکی، بادکنک قرمز، پارک سرسبز';
+ make('label','نوع نمای دوربین برای سکانس انتخابی');
+ const camera=make('select');[['full','نمای تمام‌قد (سر تا کف پا)'],['medium','نمای متوسط (کمر به بالا)'],['close','نمای نزدیک (چهره)'],['wide','نمای باز محیطی']].forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;camera.append(o)});
+ const cameraInstructions={full:'نمای تمام‌قد از سر تا کف پا؛ همه بدن شخصیت و بادکنک در کادر بمانند. دوربین با فاصله کافی، بدون برش سر، دست و پا.',medium:'نمای متوسط از کمر به بالا؛ ترکیب‌بندی ثابت و طبیعی.',close:'نمای نزدیک چهره با جزئیات طبیعی و بدون تغییر هویت.',wide:'نمای باز برای نمایش محیط و جایگاه شخصیت‌ها.'};
  const paidTitle=make('p');const pass=make('input');pass.type='password';pass.placeholder='رمز خصوصی گالری/بارگذاری';pass.autocomplete='off';
  const confirm=make('label');const checkbox=document.createElement('input');checkbox.type='checkbox';confirm.append(checkbox,document.createTextNode(' هزینه تولید فقط یک سکانس را از اعتبار Replicate تأیید می‌کنم.'));
  const go=make('button','تولید آزمایشی فقط یک سکانس');go.type='button';const status=make('p');status.setAttribute('role','status');const videoArea=make('div');
@@ -63,7 +80,10 @@ function openStudio(){
 هویت ثابت شخصیت‌ها و محیط (فقط ویژگی‌های ظاهری، نه رویدادهای داستان): ${identity.value.trim()}
 سکانس ${selected.number} از ${Math.ceil(total/size)}، زمان ${from} تا ${to} ثانیه:
 ${selected.text}
+کادربندی دوربین: ${cameraInstructions[camera.value]}
+حرکت و فیزیک: ${naturalMotionInstruction}
 پیوستگی: چهره، اندام، لباس، اشیا و مکان مطابق شناسنامه ثابت حفظ شوند. از نشان‌دادن رویدادهای سکانس بعدی خودداری کن. از اولین فریم فقط صحنه واقعی، بدون نوشته و تیتراژ.`;checkbox.checked=false;pilotId=null;sceneNote.textContent=`سکانس ${selected.number} از ${Math.ceil(total/size)} | ${from} تا ${to} ثانیه. متن قابل ویرایش است.`;updateDuration()};
+ camera.addEventListener('change',()=>{if(planValid)setScene()});
  identity.addEventListener('input',()=>{if(scenes.length&&planValid)setScene()});
  shot.addEventListener('input',()=>{if(!pending){pilotId=null;checkbox.checked=false;}});
  sceneSelect.onchange=setScene;
@@ -80,21 +100,32 @@ ${selected.text}
    if(planValid){setScene();}else{shot.value='';sceneNote.textContent=`⚠️ نقشه ناقص است: ${scenes.length} سکانس معتبر از ${planned} مورد انتظار. تولید پولی مسدود شد؛ فیلمنامه را دوباره تهیه کنید.`;}
   }catch(e){result.textContent='❌ '+e.message}finally{button.disabled=false}};
  go.onclick=async()=>{if(pending)return;const size=Number(duration.value);if(size===10&&!canTen){status.textContent='مدل ۱۰ ثانیه‌ای فعال نیست؛ هزینه‌ای ثبت نشد.';return}if(!planValid||sceneSelect.disabled){status.textContent='ابتدا فیلمنامه و سکانس معتبر تولید کنید.';return}if(shot.value.trim().length<80){status.textContent='پرامپت سکانس ناقص است؛ هزینه‌ای ثبت نشد.';return}if(!pass.value){status.textContent='رمز خصوصی را وارد کنید.';return}if(!checkbox.checked){status.textContent='ابتدا هزینه فقط یک سکانس را تأیید کنید.';return}
+  const generatedSceneNumber=Number(sceneSelect.value)||1;
   if(!pilotId)pilotId='studio_'+Date.now()+'_'+Math.random().toString(36).slice(2,14);pending=true;go.disabled=true;status.textContent='در حال ثبت فقط یک درخواست در Replicate...';videoArea.replaceChildren();
   try{const response=await fetch('/api/studio/pilot',{method:'POST',headers:{'Content-Type':'application/json','x-aluniverse-upload-password':pass.value},body:JSON.stringify({prompt:shot.value.trim(),duration:size,request_id:pilotId,confirm_cost:true})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'شروع ناموفق بود');if(!data.prediction_id){status.textContent='درخواست در حال آماده‌سازی است؛ دوباره تولید را نزنید.';return}
    status.textContent=`در حال ساخت سکانس ${size} ثانیه‌ای...`;for(let i=0;i<45;i++){await new Promise(resolve=>setTimeout(resolve,5000));const r=await fetch('/api/media/status/'+encodeURIComponent(data.prediction_id)+'?kind=video');const d=await r.json();if(!r.ok)throw Error(d.error||'خطای دریافت وضعیت');if(d.status==='failed'||d.status==='canceled')throw Error(String(d.error||'تولید ناموفق بود'));if(d.status==='succeeded'){if(!d.url)throw Error('ویدئو تولید شد اما آدرس خروجی دریافت نشد.');const v=document.createElement('video');v.controls=true;v.playsInline=true;v.style.cssText='width:100%;max-width:650px';v.src=d.url;videoArea.append(v);addVideoTime(v);
-     const frameButton=document.createElement('button');frameButton.type='button';frameButton.textContent='🖼 استخراج فریم پایانی این سکانس';videoArea.append(frameButton);
-     const frameNote=document.createElement('p');videoArea.append(frameNote);
+     const frameButton=document.createElement('button');frameButton.type='button';frameButton.textContent='🖼 استخراج دوباره فریم پایانی';videoArea.append(frameButton);
+     const frameNote=document.createElement('p');videoArea.append(frameNote);const framePreview=document.createElement('div');videoArea.append(framePreview);
      frameButton.onclick=async()=>{frameButton.disabled=true;frameNote.textContent='در حال دریافت فریم پایانی...';
       try{const r=await fetch(d.url);if(!r.ok)throw Error('دریافت ویدئو ناموفق بود');const blob=await r.blob();if(blob.size>85*1024*1024)throw Error('فایل بزرگ است');
        const objectUrl=URL.createObjectURL(blob);const temp=document.createElement('video');temp.muted=true;temp.preload='auto';temp.playsInline=true;temp.src=objectUrl;
        try{await new Promise((resolve,reject)=>{temp.onloadedmetadata=resolve;temp.onerror=()=>reject(Error('خواندن ویدئو ممکن نشد'));setTimeout(()=>reject(Error('مهلت بارگذاری پایان یافت')),20000)});
         temp.currentTime=Math.max(0,temp.duration-0.08);await new Promise((resolve,reject)=>{temp.onseeked=resolve;temp.onerror=()=>reject(Error('خواندن فریم ناموفق بود'));setTimeout(()=>reject(Error('مهلت استخراج فریم پایان یافت')),20000)});
         const canvas=document.createElement('canvas');canvas.width=temp.videoWidth;canvas.height=temp.videoHeight;if(!canvas.width||!canvas.height)throw Error('ابعاد ویدئو نامعتبر است');canvas.getContext('2d').drawImage(temp,0,0);
-        const frame=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!frame)throw Error('ساخت تصویر ناموفق بود');const a=document.createElement('a');const url=URL.createObjectURL(frame);a.href=url;a.download=`aluniverse_scene_${sceneSelect.value}_last_frame.png`;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);frameNote.textContent='فریم پایانی دریافت شد. استفاده از آن به‌عنوان مرجع در مدل ۱۰ ثانیه‌ای فعلی پشتیبانی نمی‌شود.';
+        const frame=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!frame)throw Error('ساخت تصویر ناموفق بود');const url=URL.createObjectURL(frame);framePreview.replaceChildren();
+        const img=document.createElement('img');img.src=url;img.alt='تصویر فریم پایانی';img.style.cssText='max-width:100%;max-height:300px;display:block;margin:10px 0;border-radius:8px';
+        const a=document.createElement('a');a.href=url;a.download=`aluniverse_scene_${generatedSceneNumber}_last_frame.png`;a.textContent='⬇️ ذخیره فریم پایانی در گوشی (PNG)';a.style.cssText='display:inline-block;padding:12px;border:1px solid #6b4bd1;border-radius:10px;margin:8px 0';
+        framePreview.append(img,a);
+        try{await saveStudioFrameLocally(generatedSceneNumber,data.prediction_id,frame);
+          frameNote.textContent='✅ فریم پایانی به‌صورت خودکار استخراج و در حافظه همین مرورگر ذخیره شد. برای دریافت در پوشه دانلود گوشی، روی «ذخیره فریم پایانی در گوشی» بزنید. مدل ۱۰ ثانیه‌ای فعلی تصویر مرجع نمی‌پذیرد.';
+        }catch(storageError){frameNote.textContent='فریم استخراج شد، اما ذخیره در حافظه مرورگر ناموفق بود: '+storageError.message+'؛ برای دریافت در گوشی روی لینک دانلود بزنید.';}
+
        }finally{URL.revokeObjectURL(objectUrl)}
       }catch(e){frameNote.textContent='❌ '+e.message+'؛ ویدئو همچنان در گالری محفوظ است.'}finally{frameButton.disabled=false}
      };
+     // Automatic frame extraction starts once the completed video is available; manual retry stays available.
+     frameNote.textContent='⏳ استخراج و ذخیره خودکار فریم پایانی...';
+     frameButton.click();
      const link=document.createElement('a');link.href=d.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='دریافت فایل ویدئو';videoArea.append(link);status.textContent=d.gallery_saved?'سکانس ساخته و در گالری ذخیره شد.':'سکانس ساخته شد؛ وضعیت ذخیره در گالری را بررسی کنید.';return;}}
    status.textContent='پردازش طول کشیده است؛ شناسه: '+data.prediction_id;
   }catch(e){status.textContent='❌ '+e.message}finally{pending=false;go.disabled=(Number(duration.value)===10&&!canTen);checkbox.checked=false}
@@ -104,15 +135,30 @@ ${selected.text}
 const galleryKey='aluniverse_gallery_history_v1';
 function galleryItems(){try{return JSON.parse(localStorage.getItem(galleryKey)||'[]')}catch{return []}}
 function addVideoTime(video){
+ // 6.6.5: local playback controls only; never requests a new Replicate generation.
  video.preload='metadata';
- const timer=document.createElement('div');timer.dir='ltr';timer.setAttribute('aria-label','زمان پخش ویدئو');
- timer.style.cssText='font:600 15px sans-serif;text-align:center;direction:ltr;padding:7px 0;color:#24126a';
+ const parent=video.parentNode;if(!parent)return;
+ const viewer=document.createElement('div');viewer.dir='ltr';viewer.style.cssText='width:100%;max-width:100%;margin:10px 0;border:1px solid #ddd;border-radius:12px;padding:8px;box-sizing:border-box;background:#f9f7ff';
+ const stage=document.createElement('div');stage.style.cssText='position:relative;overflow:hidden;width:100%;background:#111;touch-action:none;border-radius:9px;min-height:160px;display:flex;align-items:center;justify-content:center';
+ parent.insertBefore(viewer,video);viewer.append(stage);stage.append(video);
+ video.style.cssText+=';display:block;max-width:100%;width:100%;max-height:65vh;object-fit:contain;transform-origin:center center;';
+ const bar=document.createElement('div');bar.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin-top:8px';viewer.append(bar);
+ const makeButton=(label,handler)=>{const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.style.cssText='padding:7px 10px;min-height:36px;border-radius:8px;border:1px solid #7b63b8;background:#fff;color:#24126a;font-size:14px';btn.onclick=handler;bar.append(btn);return btn};
+ let zoom=1,dx=0,dy=0;const draw=()=>{video.style.transform=`translate(${dx}px,${dy}px) scale(${zoom})`};
+ [1,2,3].forEach(n=>makeButton(n+'× بزرگ‌نمایی',()=>{zoom=n;dx=0;dy=0;draw()}));
+ makeButton('⛶ تمام‌صفحه',async()=>{try{if(document.fullscreenElement){await document.exitFullscreen();return;}if(viewer.requestFullscreen){await viewer.requestFullscreen();return;}if(video.webkitEnterFullscreen){video.webkitEnterFullscreen();return;}throw Error('این مرورگر پشتیبانی نمی‌کند');}catch(e){alert('تمام‌صفحه در این مرورگر فعال نشد: '+e.message)}});
+ const speed=document.createElement('select');speed.setAttribute('aria-label','سرعت پخش');speed.style.cssText='padding:7px;border-radius:8px;min-height:36px';[[0.5,'سرعت ۰٫۵×'],[1,'سرعت ۱× (طبیعی)'],[1.5,'سرعت ۱٫۵×'],[2,'سرعت ۲×']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;speed.append(o)});speed.value='1';speed.onchange=()=>{video.playbackRate=Number(speed.value)};bar.append(speed);
+ const timer=document.createElement('div');timer.dir='ltr';timer.setAttribute('aria-label','زمان پخش ویدئو');timer.style.cssText='font:600 15px sans-serif;text-align:center;direction:ltr;padding:7px 0;color:#24126a';viewer.append(timer);
  const format=seconds=>{if(!Number.isFinite(seconds)||seconds<0)return '--:--';const n=Math.floor(seconds);return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
  const update=()=>{timer.textContent=format(video.currentTime)+' / '+format(video.duration)};
  ['loadedmetadata','durationchange','timeupdate','seeked','emptied'].forEach(event=>video.addEventListener(event,update));
- video.addEventListener('error',()=>{timer.textContent='زمان ویدئو در دسترس نیست'});
- update();video.insertAdjacentElement('afterend',timer);
+ video.addEventListener('error',()=>{timer.textContent='زمان ویدئو در دسترس نیست'});update();
+ let pointer=null;
+ stage.addEventListener('pointerdown',e=>{if(zoom<=1||e.target!==video)return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY};try{stage.setPointerCapture(e.pointerId)}catch{}});
+ stage.addEventListener('pointermove',e=>{if(!pointer||pointer.id!==e.pointerId)return;dx+=e.clientX-pointer.x;dy+=e.clientY-pointer.y;pointer.x=e.clientX;pointer.y=e.clientY;draw()});
+ ['pointerup','pointercancel'].forEach(name=>stage.addEventListener(name,()=>{pointer=null}));
 }
+
 function rememberGallery(id,kind){if(!/^[a-zA-Z0-9_-]{10,100}$/.test(id))return;const entries=galleryItems().filter(x=>x.id!==id);entries.unshift({id,kind});localStorage.setItem(galleryKey,JSON.stringify(entries.slice(0,100)))}
 if(!localStorage.getItem('aluniverse_rose_imported')){rememberGallery('20rgz3gwm1rzr0d1b0jvgfqv2g','image');localStorage.setItem('aluniverse_rose_imported','1')}
 async function openGallery(kind){
@@ -284,7 +330,7 @@ async function run(){
       const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`ابزار: ${meta[group][1]}؛ زیرابزار: ${sub}؛ زبان: ${el('language').value}\n${group==='web'?'اگر درخواست ساخت صفحه وب است، یک فایل HTML کامل و مستقل با CSS و JavaScript داخلی تولید کن؛ پاسخ را با <!DOCTYPE html> شروع و با </html> تمام کن. کد را مختصر و کاربردی بنویس تا در محدودیت پاسخ جا شود؛ حداکثر ۳ محصول نمونه و CSS فشرده، بدون توضیحات بیرون از HTML. تمام تگ‌ها، به‌ویژه script و body و html، را ببند.':''}\n${sub==='آکادمی آلیونیورسی'?'نقش مدرس متخصص را داشته باش؛ درس گام‌به‌گام و کاربردی با هدف، پیش‌نیاز، مثال، تمرین و آزمون کوتاه ارائه بده. از ادعای اعطای مدرک رسمی خودداری کن.':''}\n${sub==='مرکز مدل‌های هوش مصنوعی'?'مدل‌ها و کاربردهایشان را معرفی و مقایسه کن؛ ادعای اتصال واقعی به مدل‌های دیگر نکن. اتصال اجرایی فعلی فقط از طریق سرویس‌های پیکربندی‌شده است.':''}\n${sub==='فریلنسری و کسب درآمد'?'به‌عنوان مشاور فریلنسری درباره مهارت، نمونه‌کار، قرارداد، قیمت‌گذاری، جذب مشتری و ریسک پرداخت راهنمای عملی بده؛ تضمین درآمد نده.':''}\n${sub==='تحلیل ایده'?'ایده را با معیارهای نیاز بازار، مشتری هدف، نقاط قوت و ضعف، امکان‌سنجی فنی، هزینه تقریبی، ریسک‌ها، رقبا، مدل درآمد و پیشنهاد اجرای MVP تحلیل کن. هزینه‌ها و اعداد را تخمینی و همراه با فرضیات بیان کن.':''}\n${sub==='اتوماسیون هوشمند'?'فقط بر اتوماسیون مبتنی بر مدل هوش مصنوعی، دستیارها، پردازش سند و گردش‌کار هوشمند تمرکز کن؛ در صورت درخواست، طرح اجرایی بده و ادعای اجرای واقعی نکن.':''}\n${sub==='اتوماسیون فنی'?'فقط بر اتوماسیون فنی نرم‌افزار، API، پایگاه داده، زمان‌بندی و تست تمرکز کن؛ در صورت درخواست کد نمونه بده و ادعای استقرار واقعی نکن.':''}\n${sub==='اتوماسیون کسب‌وکار'?'فقط بر گردش‌کار فروش، CRM، بازاریابی، پشتیبانی و گزارش‌های مدیریتی تمرکز کن؛ در صورت درخواست مراحل اجرا بده و ادعای اتصال واقعی به سامانه‌ها نکن.':''}\nدرخواست: ${request}`})});
       const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'خطای هوش مصنوعی');return group==='web'?outputWeb(data.answer||'پاسخی دریافت نشد.'):outputText(data.answer||'پاسخی دریافت نشد.');
     }
-    const body={kind,prompt:request,request_id:(crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random().toString(36).slice(2)).replace(/[^a-zA-Z0-9_-]/g,''),aspect_ratio:el('image-ratio').value,...(kind==='video'?{duration:Number(el('video-duration').value)}:{})};
+    const body={kind,prompt:kind==='video'||kind==='animation'?request+'\n'+naturalMotionInstruction:request,request_id:(crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random().toString(36).slice(2)).replace(/[^a-zA-Z0-9_-]/g,''),aspect_ratio:el('image-ratio').value,...(kind==='video'?{duration:Number(el('video-duration').value)}:{})};
     const file=el('reference-file').files[0];
     if(file){if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('فقط JPG، PNG یا WebP مجاز است.');if(file.size>6*1024*1024)throw Error('تصویر مرجع باید کمتر از ۶ مگابایت باشد.');body.reference=await fileData(file);}
     const response=await fetch('/api/media/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
