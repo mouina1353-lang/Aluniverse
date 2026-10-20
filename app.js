@@ -103,11 +103,19 @@ function openStudio(){
   const upload=make('button','بارگذاری تصویر انتخاب‌شده');upload.type='button';
   const gallery=make('button','انتخاب از گالری آلیونیورسی');gallery.type='button';
   const select=make('select');select.hidden=true;const info=make('p','');
+  const preview=make('img');preview.alt='پیش‌نمایش تصویر مرجع';preview.hidden=true;preview.style.cssText='display:none;width:100%;max-width:420px;max-height:360px;object-fit:contain;border:1px solid #e0d9f0;border-radius:12px;margin:12px auto;background:#faf9ff';
+  const clear=make('button','حذف تصویر انتخاب‌شده');clear.type='button';clear.hidden=true;
+  let localUrl='';const revoke=()=>{if(localUrl){URL.revokeObjectURL(localUrl);localUrl=''}};
+  const show=url=>{preview.src=url;preview.hidden=false;preview.style.display='block';clear.hidden=false};
+  clear.onclick=()=>{revoke();target.value='';file.value='';select.value='';preview.removeAttribute('src');preview.hidden=true;preview.style.display='none';clear.hidden=true;info.textContent='تصویر حذف شد.'};
+  file.onchange=()=>{revoke();if(file.files?.[0]){localUrl=URL.createObjectURL(file.files[0]);show(localUrl);info.textContent='پیش‌نمایش محلی؛ برای ثبت، بارگذاری را بزنید.'}};
+  preview.onerror=()=>{info.textContent='❌ تصویر باز نشد یا لینک منقضی شده است.';preview.hidden=true;preview.style.display='none'};
+
   upload.onclick=async()=>{const f=file.files?.[0];if(!f){info.textContent='ابتدا تصویر را انتخاب کنید.';return}
    if(f.size>8*1024*1024){info.textContent='حداکثر حجم تصویر ۸ مگابایت است.';return}
    if(!pass.value){info.textContent='رمز خصوصی گالری را پایین صفحه وارد کنید.';return}
    upload.disabled=true;info.textContent='در حال بارگذاری...';
-   try{const r=await fetch('/api/studio/reference-image',{method:'POST',headers:{'Content-Type':f.type,'x-aluniverse-upload-password':pass.value},body:f});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای بارگذاری');target.value=d.url;info.textContent='✅ تصویر انتخاب شد؛ لینک یک ساعت اعتبار دارد.'}
+   try{const r=await fetch('/api/studio/reference-image',{method:'POST',headers:{'Content-Type':f.type,'x-aluniverse-upload-password':pass.value},body:f});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای بارگذاری');target.value=d.url;revoke();show(d.url);info.textContent='✅ تصویر بارگذاری شد؛ لینک یک ساعت اعتبار دارد.'}
    catch(e){info.textContent='❌ '+e.message}finally{upload.disabled=false}
   };
   gallery.onclick=async()=>{if(!pass.value){info.textContent='رمز خصوصی گالری را پایین صفحه وارد کنید.';return}
@@ -118,11 +126,18 @@ function openStudio(){
     select.hidden=false;info.textContent=(d.items||[]).length?'از فهرست تصویر را انتخاب کنید.':'تصویری در صفحه اول گالری پیدا نشد.'}
    catch(e){info.textContent='❌ '+e.message}finally{gallery.disabled=false}
   };
-  select.onchange=()=>{if(select.value){target.value=select.value;info.textContent='✅ تصویر گالری انتخاب شد؛ لینک موقت است.'}};
+  select.onchange=()=>{if(select.value){target.value=select.value;revoke();show(select.value);info.textContent='✅ تصویر گالری انتخاب شد؛ لینک موقت است.'}};
  };
  pickReference(startImage,'تصویر شروع از گوشی یا گالری');pickReference(endImage,'تصویر پایان از گوشی یا گالری (اختیاری)');
  const checkImages=make('button','بررسی رایگان نشانی تصاویر');checkImages.type='button';const imageResult=make('p','لینک‌ها هنوز بررسی نشده‌اند.');
- checkImages.onclick=()=>{const valid=v=>{try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password&&!!u.hostname}catch{return false}};const a=startImage.value.trim(),b=endImage.value.trim();imageResult.textContent=!valid(a)?'❌ لینک HTTPS معتبر تصویر شروع لازم است.':b&&!valid(b)?'❌ لینک تصویر پایان معتبر نیست.':'✅ قالب لینک‌ها معتبر است. دسترسی مدل به فایل‌ها، تعرفه و کیفیت هنوز بررسی نشده؛ Kling همچنان غیرفعال است.'};
+ checkImages.onclick=async()=>{
+ const valid=v=>{try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password&&!!u.hostname}catch{return false}};
+ const a=startImage.value.trim(),b=endImage.value.trim();
+ if(!valid(a)||b&&!valid(b)){imageResult.textContent='❌ نشانی HTTPS معتبر تصویر لازم است.';return}
+ imageResult.textContent='در حال بررسی بازشدن تصاویر...';checkImages.disabled=true;
+ try{const check=url=>new Promise((resolve,reject)=>{const img=new Image();const t=setTimeout(()=>{img.src='';reject(Error('زمان بررسی تمام شد'))},12000);img.onload=()=>{clearTimeout(t);resolve(true)};img.onerror=()=>{clearTimeout(t);reject(Error('تصویر باز نشد؛ شاید لینک منقضی شده است'))};img.src=url});await check(a);if(b)await check(b);imageResult.textContent='✅ تصویرها در مرورگر باز می‌شوند؛ دسترسی Kling و هزینه هنوز تأیید نشده است.'}
+ catch(e){imageResult.textContent='❌ '+e.message}finally{checkImages.disabled=false}
+};
  const checkModel=make('button','🔎 بررسی رایگان مشخصات موتور جایگزین');checkModel.type='button';
  const checkResult=make('p','این بررسی فقط مشخصات فنی را می‌خواند؛ ویدئو تولید نمی‌کند.');checkResult.style.cssText='font-size:13px;white-space:pre-wrap';
  checkModel.onclick=async()=>{checkModel.disabled=true;checkResult.textContent='در حال بررسی بدون هزینه تولید...';try{
