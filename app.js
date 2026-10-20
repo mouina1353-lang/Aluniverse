@@ -16,6 +16,30 @@ async function openGallery(kind){
  show('workspace','block');show('reference-box','none');show('video-settings','none');show('image-settings','none');
  el('user-input').style.display='none';el('run-button').style.display='none';el('result').replaceChildren();show('result','block');
  const note=document.createElement('p');note.textContent='گالری این دستگاه؛ فایل‌ها در Supabase نگهداری می‌شوند. خروجی‌های قدیمی که شناسه‌شان ثبت نشده خودکار نمایش داده نمی‌شوند.';el('result').append(note);
+ if(kind==='video'){
+  const controls=document.createElement('div');controls.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:12px';
+  const password=document.createElement('input');password.type='password';password.placeholder='رمز خصوصی بارگذاری';password.autocomplete='off';password.style.cssText='width:100%;padding:12px;margin-bottom:8px';
+  const file=document.createElement('input');file.type='file';file.accept='video/mp4,video/webm';file.style.cssText='width:100%;margin:8px 0';
+  const send=document.createElement('button');send.type='button';send.textContent='بارگذاری ویدئو از گوشی';send.style.cssText='padding:12px;margin:8px 0';
+  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='نمایش فایل‌های Supabase';refresh.style.cssText='padding:12px;margin:8px';
+  const feedback=document.createElement('p');
+  controls.append(password,file,send,refresh,feedback);el('result').append(controls);
+  const load=async()=>{
+   if(!password.value){feedback.textContent='ابتدا رمز خصوصی را وارد کنید.';return}
+   feedback.textContent='در حال دریافت فهرست...';
+   try{const r=await fetch('/api/gallery/list?kind=video',{headers:{'x-aluniverse-upload-password':password.value}});const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'خطا');
+    controls.querySelectorAll('.gallery-remote').forEach(x=>x.remove());
+    for(const item of data.items){const box=document.createElement('div');box.className='gallery-remote';box.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd';
+      const name=document.createElement('p');name.textContent=item.name;const video=document.createElement('video');video.controls=true;video.playsInline=true;video.src=item.url;video.style.cssText='max-width:100%;max-height:320px';
+      const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت ویدئو';box.append(name,video,document.createElement('br'),link);controls.append(box)}
+    feedback.textContent=data.items.length?`تعداد فایل‌ها: ${data.items.length}`:'فایلی در Supabase پیدا نشد.';
+   }catch(e){feedback.textContent='❌ '+e.message}
+  };
+  refresh.onclick=load;
+  send.onclick=async()=>{const f=file.files[0];if(!f){feedback.textContent='ابتدا فایل ویدئو را انتخاب کنید.';return}if(!password.value){feedback.textContent='رمز خصوصی را وارد کنید.';return}
+   if(f.size>15*1024*1024){feedback.textContent='حداکثر حجم مجاز ۱۵ مگابایت است.';return}
+   send.disabled=true;feedback.textContent='در حال بارگذاری...';try{const r=await fetch('/api/gallery/upload',{method:'POST',headers:{'Content-Type':f.type||'video/mp4','x-aluniverse-upload-password':password.value},body:f});const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'خطا');feedback.textContent='بارگذاری موفق؛ در حال دریافت فهرست...';await load()}catch(e){feedback.textContent='❌ '+e.message}finally{send.disabled=false}};
+ }
  const entries=galleryItems().filter(x=>x.kind===kind);
  if(!entries.length){const p=document.createElement('p');p.textContent='هنوز خروجی ثبت‌شده‌ای در این دستگاه وجود ندارد.';el('result').append(p)}
  for(const item of entries){

@@ -8,7 +8,7 @@ const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const supaUrl=()=>clean(process.env.SUPABASE_URL||process.env.SUPABASE_PROJECT_URL).replace(/\/$/,'');
 const supaKey=()=>clean(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY);
 const galleryConfigured=()=>!!(supaUrl()&&supaKey());
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.5.5',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.5.6',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
@@ -112,6 +112,47 @@ async function saveToGallery(predictionId,kind,originalUrl){
   try{return await task}finally{savingOutputs.delete(predictionId)}
 }
 function normalize(p,kind){const url=urlOf(p.output);return {success:p.status==='succeeded',type:kind,status:p.status,prediction_id:p.id,url:validUrl(url)?url:null,image:kind==='image'?url:undefined,video:kind!=='image'?url:undefined,error:p.error||null};}
+// Manual uploads are password-protected and never expose Supabase service credentials.
+const uploadLimit=15*1024*1024;
+function uploadAuthorized(req){
+ const expected=process.env.ALUNIVERSE_UPLOAD_PASSWORD||'';
+ const given=req.get('x-aluniverse-upload-password')||'';
+ if(expected.length<12||!given||Buffer.byteLength(given)!==Buffer.byteLength(expected))return false;
+ return require('crypto').timingSafeEqual(Buffer.from(given),Buffer.from(expected));
+}
+app.post('/api/gallery/upload',express.raw({type:['video/mp4','video/webm'],limit:'15mb'}),async(req,res)=>{
+ try{
+  if(!uploadAuthorized(req))return res.status(401).json({success:false,error:'رمز بارگذاری تنظیم نشده یا نادرست است.'});
+  if(!galleryConfigured())return res.status(503).json({success:false,error:'گالری تنظیم نشده است.'});
+  const mime=String(req.get('content-type')||'').split(';')[0].toLowerCase();
+  if(!['video/mp4','video/webm'].includes(mime)||!Buffer.isBuffer(req.body)||req.body.length<12||req.body.length>uploadLimit)return res.status(400).json({success:false,error:'فقط ویدئوی MP4 یا WebM تا ۱۵ مگابایت مجاز است.'});
+  const b=req.body;
+  const mp4=b.subarray(4,8).toString()==='ftyp';
+  const webm=b.subarray(0,4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]));
+  if(!(mime==='video/mp4'&&mp4||mime==='video/webm'&&webm))return res.status(400).json({success:false,error:'محتوای فایل با فرمت ویدئو مطابقت ندارد.'});
+  const id='manual-'+require('crypto').randomUUID();const path=id+(mp4?'.mp4':'.webm');
+  const endpoint=`${supaUrl()}/storage/v1/object/aluniverse-videos/${path}`;
+  const response=await fetch(endpoint,{method:'POST',headers:{apikey:supaKey(),Authorization:`Bearer ${supaKey()}`,'Content-Type':mime,'x-upsert':'false'},body:b,signal:AbortSignal.timeout(90000)});
+  if(!response.ok){console.error('MANUAL UPLOAD ERROR',response.status,(await response.text()).slice(0,300));return res.status(502).json({success:false,error:`ذخیره در Supabase ناموفق بود (HTTP ${response.status}).`})}
+  res.json({success:true,path,bucket:'aluniverse-videos'});
+ }catch(e){console.error('MANUAL UPLOAD ERROR',e.message);res.status(502).json({success:false,error:'ارتباط بارگذاری ناموفق بود.'})}
+});
+app.get('/api/gallery/list',async(req,res)=>{
+ try{
+  if(!uploadAuthorized(req))return res.status(401).json({success:false,error:'رمز گالری نادرست است.'});
+  const kind=req.query.kind==='image'?'image':'video';const bucket=kind==='image'?'aluniverse-images':'aluniverse-videos';
+  const result=await request(`${supaUrl()}/storage/v1/object/list/${bucket}`,{method:'POST',headers:{apikey:supaKey(),Authorization:`Bearer ${supaKey()}`,'Content-Type':'application/json'},body:JSON.stringify({prefix:'',limit:100,offset:0,sortBy:{column:'created_at',order:'desc'}})},20000);
+  if(!Array.isArray(result))throw Error('پاسخ فهرست گالری نامعتبر است.');
+  const entries=[];
+  for(const item of result.filter(x=>x.name&&/^[a-zA-Z0-9_-]+\.(mp4|webm|png|jpg|jpeg|webp)$/.test(x.name)).slice(0,40)){
+   const storagePath=`${bucket}/${encodeURIComponent(item.name)}`;
+   try{const signed=await request(`${supaUrl()}/storage/v1/object/sign/${storagePath}`,{method:'POST',headers:{apikey:supaKey(),Authorization:`Bearer ${supaKey()}`,'Content-Type':'application/json'},body:JSON.stringify({expiresIn:3600})},20000);
+   if(signed.signedURL)entries.push({name:item.name,url:signedLink(signed.signedURL)});
+   }catch(e){console.error('GALLERY LIST SIGN ERROR',item.name,e.message)}
+  }
+  res.json({success:true,items:entries});
+ }catch(e){console.error('GALLERY LIST ERROR',e.message);res.status(502).json({success:false,error:'دریافت فهرست گالری ناموفق بود.'})}
+});
 app.get('/api/media/config',(_,res)=>res.json({success:true,video:{model:models.video,durations:tenConfigured()?[5,10]:[5],tenSecondsConfigured:tenConfigured(),resolution:['720p'],fps:[25],ratios:['16:9'],note:'ویدئوی ۱۰ ثانیه‌ای با Wan 2.2 فعال و آزمایش شده است. مدل ۵ ثانیه‌ای بدون تغییر باقی است.'},image:{ratios:[...supportedRatios],editConfigured:!!models.image_edit},gallery:{configured:galleryConfigured()}}));
 app.post('/api/media/start',async(req,res)=>{
   try{
@@ -158,4 +199,4 @@ app.get('/api/media/status/:id',async(req,res)=>{
 });
 for(const kind of ['image','video','animation'])app.post(`/api/${kind}`,(_,res)=>res.status(409).json({success:false,error:'لطفاً صفحه را تازه‌سازی کنید تا نسخه جدید بارگذاری شود.'}));
 setInterval(()=>{for(const [k,v] of jobs)if(Date.now()-v.created>24*60*60*1000)jobs.delete(k);if(savedOutputs.size>2000)savedOutputs.clear()},3600000).unref();
-app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.5.5 ready'));
+app.listen(process.env.PORT||10000,()=>console.log('Aluniverse 6.5.6 ready'));
