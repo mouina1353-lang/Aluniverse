@@ -92,6 +92,12 @@ function openStudio(){
  const cameraInstructions={full:'نمای تمام‌قد از سر تا کف پا؛ همه بدن شخصیت و بادکنک در کادر بمانند. دوربین با فاصله کافی، بدون برش سر، دست و پا.',medium:'نمای متوسط از کمر به بالا؛ ترکیب‌بندی ثابت و طبیعی.',close:'نمای نزدیک چهره با جزئیات طبیعی و بدون تغییر هویت.',wide:'نمای باز برای نمایش محیط و جایگاه شخصیت‌ها.'};
  const modelInfo=make('p','در حال بررسی موتور تولید ویدئو...');modelInfo.style.cssText='font-size:14px;color:#24126a';
  const modeLabel=make('label','حالت تولید ویدئو');const modeSelect=make('select');[['standard','استاندارد (فعال)'],['realistic','فوق‌واقع‌گرایانه (در انتظار تأیید موتور)']].forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;if(value==='realistic')o.disabled=true;modeSelect.append(o)});
+ const checkModel=make('button','🔎 بررسی رایگان مشخصات موتور جایگزین');checkModel.type='button';
+ const checkResult=make('p','این بررسی فقط مشخصات فنی را می‌خواند؛ ویدئو تولید نمی‌کند.');checkResult.style.cssText='font-size:13px;white-space:pre-wrap';
+ checkModel.onclick=async()=>{checkModel.disabled=true;checkResult.textContent='در حال بررسی بدون هزینه تولید...';try{
+ const r=await fetch('/api/media/model-check',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای بررسی');
+ checkResult.textContent=d.configured?'مدل جایگزین: '+d.model+'\nورودی‌ها: '+(d.inputs||[]).join('، ')+'\nالزامی: '+(d.required||[]).join('، ')+'\n'+d.warning:d.message+'\nبرای معرفی موتور جدید ابتدا باید نام دقیق و تعرفه آن تأیید شود.';
+ }catch(e){checkResult.textContent='بررسی انجام نشد: '+e.message}finally{checkModel.disabled=false}};
  let model5='minimax/video-01',model10='wan-video/wan-2.2-t2v-fast';
  fetch('/api/media/config',{cache:'no-store'}).then(r=>r.json()).then(d=>{model5=d.video?.model||model5;model10=d.video?.model10||model10;modelInfo.textContent='موتور انتخابی: '+(Number(duration.value)===10?model10:model5)+' | حالت استاندارد. حالت فوق‌واقع‌گرایانه تا بررسی ورودی و هزینه مدل جایگزین غیرفعال است.'}).catch(()=>{modelInfo.textContent='نام موتور در دسترس نیست؛ تولید پولی را فقط پس از بررسی تنظیمات انجام دهید.'});
  const paidTitle=make('p');const pass=make('input');pass.type='password';pass.placeholder='رمز خصوصی گالری/بارگذاری';pass.autocomplete='off';
