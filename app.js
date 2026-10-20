@@ -1,11 +1,35 @@
 document.addEventListener('DOMContentLoaded',()=>{
 const groups={ai:['چت هوشمند','ایده‌پردازی','تحقیق و تحلیل','ترجمه','تحلیل فایل و سند','مهندسی Prompt','دستیار تخصصی','اتوماسیون هوشمند','مرکز مدل‌های هوش مصنوعی','آکادمی آلیونیورسی'],image:['تولید تصویر','ویرایش تصویر','تغییر سبک','ارتقای کیفیت','حذف پس‌زمینه','افکت تصویری','طراحی لوگو','تراکت','بنر و پوستر','تصاویر تبلیغاتی و غیرتبلیغاتی','طراحی صحنه و استوری‌بورد تیزر','کاتالوگ و بروشور','جلد کتاب','کارت ویزیت','محتوای شبکه اجتماعی','اینفوگرافیک','تصویر سه‌بعدی'],video:['تولید ویدئو','تصویر به ویدئو','ویرایش ویدئو','ساخت انیمیشن','افکت سینمایی','تیزر تبلیغاتی','تیزر غیرتبلیغاتی','تیزر معرفی محصول','تیزر آموزشی و مستند','فیلم و سریال چندسکانسی','چسباندن کلیپ‌ها','تدوین ویدئو','موشن‌گرافیک','ریلز','Shorts','دوبله','زیرنویس','محتوای آموزشی از منابع','تدوین حرفه‌ای مشابه InShot'],content:['مقاله','کتاب و داستان','پادکست','سناریو','محتوای ویروسی','کمپین','SEO','شبکه‌های اجتماعی','محتوای ایمیلی','متن تبلیغاتی','تقویم محتوا','محتوای چندزبانه'],web:['ساخت وب‌سایت','Landing Page','فروشگاه اینترنتی','اپلیکیشن','UI/UX','تولید کد','ساخت API','Database','تست و Debug','Deploy و انتشار','اتوماسیون فنی','نگهداری و به‌روزرسانی'],execute:['تحلیل ایده','تبدیل ایده به پروژه','تحقیقات بازار','اعتبارسنجی ایده','برنامه‌ریزی','مدل کسب‌وکار','برندسازی','بازاریابی','کمپین','فروش و درآمد','آموزش','تحلیل عملکرد','رشد و توسعه','اتوماسیون کسب‌وکار','فریلنسری و کسب درآمد']};
 const subIcons={"ai": ["💬", "💡", "🔎", "🌍", "📄", "🎯", "🤖", "⚙️", "🧠", "🎓"], "image": ["🖼️", "✏️", "🔄", "✨", "🧹", "🌟", "🏷️", "📄", "📢", "🖼️", "🎬", "📑", "📚", "💳", "📱", "📊", "🧊"], "video": ["🎥", "🖼️", "✂️", "🎞️", "✨", "📢", "🎭", "📦", "🎓", "🎬", "🔗", "🎛️", "🎨", "📱", "▶️", "🎙️", "💬", "📚", "✂️"], "content": ["📝", "📖", "🎙️", "🎬", "🔥", "📢", "🔍", "📱", "✉️", "📣", "📅", "🌍"], "web": ["🌐", "📄", "🛒", "📱", "🎨", "💻", "🔌", "🗄️", "🧪", "🚀", "⚙️", "🔧"], "execute": ["🔍", "💡", "🔎", "✅", "📋", "💼", "🏷️", "📣", "📢", "💰", "🎓", "📊", "📈", "⚙️", "💼"]};
+groups.image.push('گالری تصاویر');groups.video.push('گالری ویدئوها');
 const meta={ai:['🤖','هوش مصنوعی'],image:['🎨','تولید تصویر'],video:['🎬','ویدئو و انیمیشن'],content:['✍️','تولید محتوا'],web:['🌐','طراحی وب و نرم‌افزار'],execute:['🚀','از ایده تا اجرا']};
 const el=id=>document.getElementById(id);let group='',sub='',busy=false,activeJob=null;
 function show(id,value){el(id).style.display=value}
 function openGroup(g){group=g;sub='';el('tool-icon').textContent=meta[g][0];el('tool-title').textContent=meta[g][1];el('tool-description').textContent='زیرمجموعه موردنظر را انتخاب کنید.';el('subtools').replaceChildren();groups[g].forEach((s,i)=>{const div=document.createElement('div');div.className='subtool';const icon=document.createElement('span');icon.className='subtool-icon';icon.textContent=subIcons[g][i]||'✦';const title=document.createElement('span');title.className='subtool-title';title.textContent=s;div.append(icon,title);div.addEventListener('click',()=>openSub(s));el('subtools').appendChild(div)});show('home-hero','none');show('features','none');show('about-section','none');show('tool-page','block');show('workspace','none');window.scrollTo(0,0)}
-function openSub(s){sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();academyPanel();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'&&!isUnsupported()?'block':'none');if(group==='video'&&!isUnsupported())refreshVideoConfig();show('image-settings',group==='image'?'block':'none');el('workspace').scrollIntoView({behavior:'smooth'})}
+function openSub(s){if(s==='گالری تصاویر'||s==='گالری ویدئوها'){openGallery(s==='گالری تصاویر'?'image':'video');return;}el('user-input').style.display='';el('run-button').style.display='';sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();academyPanel();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'&&!isUnsupported()?'block':'none');if(group==='video'&&!isUnsupported())refreshVideoConfig();show('image-settings',group==='image'?'block':'none');el('workspace').scrollIntoView({behavior:'smooth'})}
+const galleryKey='aluniverse_gallery_history_v1';
+function galleryItems(){try{return JSON.parse(localStorage.getItem(galleryKey)||'[]')}catch{return []}}
+function rememberGallery(id,kind){if(!/^[a-zA-Z0-9_-]{10,100}$/.test(id))return;const entries=galleryItems().filter(x=>x.id!==id);entries.unshift({id,kind});localStorage.setItem(galleryKey,JSON.stringify(entries.slice(0,100)))}
+if(!localStorage.getItem('aluniverse_rose_imported')){rememberGallery('20rgz3gwm1rzr0d1b0jvgfqv2g','image');localStorage.setItem('aluniverse_rose_imported','1')}
+async function openGallery(kind){
+ sub=kind==='image'?'گالری تصاویر':'گالری ویدئوها';el('workspace-title').textContent=sub;
+ show('workspace','block');show('reference-box','none');show('video-settings','none');show('image-settings','none');
+ el('user-input').style.display='none';el('run-button').style.display='none';el('result').replaceChildren();show('result','block');
+ const note=document.createElement('p');note.textContent='گالری این دستگاه؛ فایل‌ها در Supabase نگهداری می‌شوند. خروجی‌های قدیمی که شناسه‌شان ثبت نشده خودکار نمایش داده نمی‌شوند.';el('result').append(note);
+ const entries=galleryItems().filter(x=>x.kind===kind);
+ if(!entries.length){const p=document.createElement('p');p.textContent='هنوز خروجی ثبت‌شده‌ای در این دستگاه وجود ندارد.';el('result').append(p)}
+ for(const item of entries){
+  const box=document.createElement('div');box.style.cssText='padding:12px;margin:12px 0;border:1px solid #ddd;border-radius:12px';
+  const label=document.createElement('p');label.textContent='شناسه: '+item.id;box.append(label);el('result').append(box);
+  try{const r=await fetch('/api/media/status/'+encodeURIComponent(item.id)+'?kind='+kind,{cache:'no-store'});const data=await r.json();
+   if(!r.ok||data.status!=='succeeded'||!/^https:\/\//.test(data.url||''))throw Error(data.error||'خروجی فعلاً در دسترس نیست');
+   const media=document.createElement(kind==='image'?'img':'video');media.src=data.url;media.style.cssText='max-width:100%;max-height:350px;border-radius:10px';if(kind==='video'){media.controls=true;media.playsInline=true}box.append(media);
+   const link=document.createElement('a');link.href=data.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت فایل';box.append(document.createElement('br'),link);
+   if(data.gallery_saved===false){const warning=document.createElement('p');warning.textContent='⚠️ ذخیره دائمی تأیید نشده است.';box.append(warning)}
+  }catch(e){const p=document.createElement('p');p.textContent='خطا: '+e.message;box.append(p)}
+ }
+ el('workspace').scrollIntoView({behavior:'smooth'});
+}
 const webSubs=['ساخت وب‌سایت','Landing Page','فروشگاه اینترنتی','تولید کد'];
 const webStoreKey='aluniverse_web_project_v1';
 let webSource='',webComplete=false;
@@ -92,7 +116,7 @@ async function follow(id,kind){
     let response;
     try{response=await fetch(`/api/media/status/${encodeURIComponent(id)}?kind=${kind}`,{cache:'no-store'});}catch(e){outputText('اتصال موقتاً قطع شد؛ در حال تلاش مجدد...');continue;}
     const data=await response.json();if(!response.ok) {outputText('در حال بررسی وضعیت... '+(data.error||''));continue;}
-    if(data.status==='succeeded'){if(!data.url&&!data.image&&!data.video)throw Error(data.error||'لینک خروجی دریافت نشد.');displayMedia(data,kind);if(data.gallery_saved===false)outputText('⚠️ خروجی نمایش داده شد، اما ذخیره دائمی در گالری انجام نشد. لطفاً فایل را اکنون دریافت کنید.');localStorage.removeItem('aluniverse_media_job');activeJob=null;return;}
+    if(data.status==='succeeded'){rememberGallery(id,kind);displayMedia(data,kind);localStorage.removeItem('aluniverse_media_job');activeJob=null;return;}
     if(['failed','canceled'].includes(data.status)){localStorage.removeItem('aluniverse_media_job');activeJob=null;throw Error(data.error||'پردازش ناموفق یا لغو شد.');}
     outputText('⏳ وضعیت تولید: '+data.status+'\nشناسه: '+id+'\nمی‌توانید صفحه را باز نگه دارید.');
   }
@@ -114,7 +138,7 @@ async function run(){
     if(file){if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('فقط JPG، PNG یا WebP مجاز است.');if(file.size>6*1024*1024)throw Error('تصویر مرجع باید کمتر از ۶ مگابایت باشد.');body.reference=await fileData(file);}
     const response=await fetch('/api/media/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await response.json();if(!response.ok||!data.success)throw Error(data.error||'ثبت درخواست ناموفق بود.');
-    if(!data.prediction_id)throw Error(data.pending?'درخواست قبلی هنوز در حال آماده‌سازی است؛ برای جلوگیری از هزینه تکراری دوباره اجرا نکنید.':'شناسه پردازش دریافت نشد؛ درخواست جدید ثبت نکنید و لاگ Render را بررسی کنید.');
+    if(!data.prediction_id)throw Error('شناسه پردازش دریافت نشد؛ درخواست جدید ثبت نکنید و لاگ Render را بررسی کنید.');
     outputText('درخواست ثبت شد؛ در انتظار نتیجه Replicate...');await follow(data.prediction_id,kind);
   }catch(e){outputText('❌ '+e.message)}finally{finish()}
 }
