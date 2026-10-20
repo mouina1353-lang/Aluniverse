@@ -6,7 +6,7 @@ const meta={ai:['🤖','هوش مصنوعی'],image:['🎨','تولید تصوی
 const el=id=>document.getElementById(id);let group='',sub='',busy=false,activeJob=null;
 function show(id,value){el(id).style.display=value}
 function openGroup(g){group=g;sub='';el('tool-icon').textContent=meta[g][0];el('tool-title').textContent=meta[g][1];el('tool-description').textContent='زیرمجموعه موردنظر را انتخاب کنید.';el('subtools').replaceChildren();groups[g].forEach((s,i)=>{const div=document.createElement('div');div.className='subtool';const icon=document.createElement('span');icon.className='subtool-icon';icon.textContent=subIcons[g][i]||'✦';const title=document.createElement('span');title.className='subtool-title';title.textContent=s;div.append(icon,title);div.addEventListener('click',()=>openSub(s));el('subtools').appendChild(div)});show('home-hero','none');show('features','none');show('about-section','none');show('tool-page','block');show('workspace','none');window.scrollTo(0,0)}
-function openSub(s){if(s==='فیلم و سریال چندسکانسی'){openStudio();return;}if(s==='گالری تصاویر'||s==='گالری ویدئوها'){openGallery(s==='گالری تصاویر'?'image':'video');return;}el('user-input').style.display='';el('run-button').style.display='';sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();academyPanel();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'&&!isUnsupported()?'block':'none');if(group==='video'&&!isUnsupported())refreshVideoConfig();show('image-settings',group==='image'?'block':'none');if(group==='image')setupImageStudio();el('workspace').scrollIntoView({behavior:'smooth'})}
+function openSub(s){if(s==='فیلم و سریال چندسکانسی'){openStudio();return;}if(s==='گالری تصاویر'||s==='گالری ویدئوها'){openGallery(s==='گالری تصاویر'?'image':'video');return;}el('user-input').style.display='';el('run-button').style.display='';sub=s;el('workspace-title').textContent=meta[group][0]+' '+s;el('user-input').value='';el('reference-file').value='';el('result').replaceChildren();show('result','none');show('workspace','block');setupWebTools();academyPanel();show('reference-box',group==='image'||group==='video'?'block':'none');show('video-settings',group==='video'&&!isUnsupported()?'block':'none');if(group==='video'&&!isUnsupported())refreshVideoConfig();show('image-settings',group==='image'?'block':'none');if(group==='image'){setupImageStudio();setupImageRatioLabels();}el('workspace').scrollIntoView({behavior:'smooth'})}
 // Studio 6.6.5: keep extracted PNGs in this browser without exposing gallery secrets.
 function saveStudioFrameLocally(sceneNumber, predictionId, pngBlob){
  return new Promise((resolve,reject)=>{
@@ -26,6 +26,29 @@ function setupImageStudio(){
  const opts=[['al-image-style','سبک تصویر',[['photo','واقعی'],['cinema','سینمایی'],['cartoon','کارتونی'],['3d','سه‌بعدی']]],['al-image-shot','کادربندی',[['auto','خودکار'],['face','پرتره'],['half','نیم‌تنه'],['full','تمام‌قد'],['wide','نمای باز']]],['al-image-quality','جزئیات',[['normal','استاندارد'],['detail','جزئیات بالا (پرامپت)']]]];
  for(const [id,label,items] of opts){const row=document.createElement('label');row.textContent=label+' ';row.style.cssText='display:block;margin:8px 0';const select=document.createElement('select');select.id=id;for(const [value,title] of items){const option=document.createElement('option');option.value=value;option.textContent=title;select.append(option)}row.append(select);box.append(row)}
  const note=document.createElement('small');note.textContent='نسبت تصویر از گزینه ابعاد موجود انتخاب می‌شود. سبک و کادر، راهنمای پرامپت هستند؛ کیفیت واقعی به مدل بستگی دارد.';box.append(note);root.append(box)
+}
+function setupImageRatioLabels(){
+ const ratio=el('image-ratio');if(!ratio)return;
+ for(const o of ratio.options){if(o.value==='9:16'&&!o.textContent.includes('تمام‌صفحه'))o.textContent+=' — عمودی / مناسب تمام‌صفحه گوشی';}
+}
+// Image gallery viewer: no new Replicate request, no alteration of original image.
+function addImageViewer(img){
+ if(!img||img.dataset.alImageViewer)return;img.dataset.alImageViewer='1';
+ const host=img.parentNode;if(!host)return;
+ const wrap=document.createElement('div');wrap.style.cssText='width:100%;margin:10px 0;padding:8px;border:1px solid #ddd;border-radius:12px;box-sizing:border-box;background:#f9f7ff';
+ const stage=document.createElement('div');stage.style.cssText='position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#18151e;min-height:160px;max-height:70vh;touch-action:none;border-radius:9px';
+ host.insertBefore(wrap,img);wrap.append(stage);stage.append(img);
+ img.style.cssText+=';display:block;max-width:100%;max-height:70vh;object-fit:contain;transform-origin:center center;user-select:none;';img.draggable=false;
+ const bar=document.createElement('div');bar.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px';wrap.append(bar);
+ const btn=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:8px 10px;border:1px solid #7b63b8;border-radius:8px;background:white;color:#24126a';b.onclick=fn;bar.append(b)};
+ let zoom=1,x=0,y=0,pointer=null;const draw=()=>img.style.transform=`translate(${x}px,${y}px) scale(${zoom})`;
+ [1,2,3].forEach(n=>btn(n+'× بزرگ‌نمایی',()=>{zoom=n;x=y=0;draw()}));
+ btn('⛶ تمام‌صفحه',async()=>{try{if(document.fullscreenElement===stage){await document.exitFullscreen();return}if(stage.requestFullscreen){await stage.requestFullscreen();return}throw Error('پشتیبانی نمی‌شود')}catch(e){alert('تمام‌صفحه فعال نشد: '+e.message)}});
+ stage.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement===stage){stage.style.maxHeight='none';stage.style.height='100vh';img.style.maxHeight='100vh'}else{stage.style.maxHeight='70vh';stage.style.height='';img.style.maxHeight='70vh'}});
+ stage.addEventListener('pointerdown',e=>{if(zoom<=1)return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY};try{stage.setPointerCapture(e.pointerId)}catch{}});
+ stage.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;x+=e.clientX-pointer.x;y+=e.clientY-pointer.y;pointer.x=e.clientX;pointer.y=e.clientY;draw()});
+ for(const event of ['pointerup','pointercancel'])stage.addEventListener(event,()=>pointer=null);
+ img.addEventListener('click',()=>{if(!document.fullscreenElement&&stage.requestFullscreen)stage.requestFullscreen().catch(()=>{})});
 }
 function imagePromptOptions(){const val=id=>document.getElementById(id)?.value||'';const style={photo:'photorealistic professional photography, natural lighting',cinema:'cinematic film still, realistic lighting',cartoon:'cartoon illustration', '3d':'3D render'}[val('al-image-style')]||'';const shot={auto:'',face:'face portrait',half:'waist-up portrait',full:'full body head-to-toe, no cropped feet or head',wide:'wide shot showing subject and surroundings'}[val('al-image-shot')]||'';return [style,shot,val('al-image-quality')==='detail'?'fine details, sharp textures':''].filter(Boolean).join('. ')}
 const naturalMotionInstruction='از حرکت آهسته ساختگی، مکث غیرطبیعی و چرخه تکراری گام جلوگیری شود. تماس پا با زمین، مرکز جرم و شتاب و کاهش سرعت واقعی باشد. حرکت در زمان واقعی با سرعت عادی 1x؛ بدون اسلوموشن، کش‌آمدن زمان، گام‌های تکراری یا حرکت مکانیکی. برای انسان: جابه‌جایی وزن، شتاب و کاهش سرعت طبیعی، حرکت مفاصل و تأثیر جاذبه واقع‌گرایانه. برای اسب و حیوانات: ترتیب واقعی گام‌ها و تماس سم با زمین، انتقال وزن بدن، حرکت طبیعی سر و گردن و یال و دم؛ بدون لغزش پا و تکرار چرخه مصنوعی. دوربین روان، بدون پرش و اعوجاج اندام. این دستور کیفیت را تضمین نمی‌کند.';
@@ -203,7 +226,7 @@ async function openGallery(kind){
     const name=document.createElement('p');name.textContent=item.name;name.style.overflowWrap='anywhere';box.append(name);
     const media=document.createElement(kind==='image'?'img':'video');media.src=item.url;media.style.cssText='max-width:100%;max-height:320px;border-radius:8px';
     if(kind==='video'){media.controls=true;media.playsInline=true;media.preload='metadata';}else{media.loading='lazy';media.alt='تصویر گالری';}
-    box.append(media);if(kind==='video')addVideoTime(media);
+    box.append(media);if(kind==='video')addVideoTime(media);else addImageViewer(media);
     const actions=document.createElement('div');actions.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin:10px 0';
     const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت فایل';
     const remove=document.createElement('button');remove.type='button';remove.textContent='حذف فایل';remove.style.cssText='padding:8px';
@@ -237,7 +260,7 @@ async function openGallery(kind){
   const label=document.createElement('p');label.textContent='شناسه: '+item.id;box.append(label);el('result').append(box);
   try{const r=await fetch('/api/media/status/'+encodeURIComponent(item.id)+'?kind='+kind,{cache:'no-store'});const data=await r.json();
    if(!r.ok||data.status!=='succeeded'||!/^https:\/\//.test(data.url||''))throw Error(data.error||'خروجی فعلاً در دسترس نیست');
-   const media=document.createElement(kind==='image'?'img':'video');media.src=data.url;media.style.cssText='max-width:100%;max-height:350px;border-radius:10px';if(kind==='video'){media.controls=true;media.playsInline=true}box.append(media);if(kind==='video')addVideoTime(media);
+   const media=document.createElement(kind==='image'?'img':'video');media.src=data.url;media.style.cssText='max-width:100%;max-height:350px;border-radius:10px';if(kind==='video'){media.controls=true;media.playsInline=true}box.append(media);if(kind==='video')addVideoTime(media);else addImageViewer(media);
    const link=document.createElement('a');link.href=data.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='مشاهده / دریافت فایل';box.append(document.createElement('br'),link);
    if(data.gallery_saved===false){const warning=document.createElement('p');warning.textContent='⚠️ ذخیره دائمی تأیید نشده است.';box.append(warning)}
   }catch(e){const p=document.createElement('p');p.textContent='خطا: '+e.message;box.append(p)}
