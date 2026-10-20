@@ -41,12 +41,11 @@ function addImageViewer(img){
  img.style.cssText+=';display:block;max-width:100%;max-height:70vh;object-fit:contain;transform-origin:center center;user-select:none;touch-action:none;';img.draggable=false;
  const bar=document.createElement('div');bar.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px';wrap.append(bar);
  const btn=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:8px 10px;border:1px solid #7b63b8;border-radius:8px;background:white;color:#24126a';b.onclick=fn;bar.append(b)};
- let zoom=1,x=0,y=0,fit='contain',lastTap=0;const pointers=new Map();let pinch=null;
- const dims=()=>{const r=stage.getBoundingClientRect(),nw=img.naturalWidth||r.width,nh=img.naturalHeight||r.height,k=(fit==='cover'?Math.max:Math.min)(r.width/nw,r.height/nh);return {w:nw*k,h:nh*k,sw:r.width,sh:r.height}};
+ let zoom=1,x=0,y=0,lastTap=0;const pointers=new Map();let pinch=null;
+ const dims=()=>{const r=stage.getBoundingClientRect(),nw=img.naturalWidth||r.width,nh=img.naturalHeight||r.height,k=Math.min(r.width/nw,r.height/nh);return {w:nw*k,h:nh*k,sw:r.width,sh:r.height}};
  const draw=()=>{const d=dims(),mx=Math.max(0,(d.w*zoom-d.sw)/2),my=Math.max(0,(d.h*zoom-d.sh)/2);x=Math.max(-mx,Math.min(mx,x));y=Math.max(-my,Math.min(my,y));img.style.transform=`translate3d(${x}px,${y}px,0) scale(${zoom})`};
  const reset=()=>{zoom=1;x=y=0;draw()};
  [1,2,3].forEach(n=>btn(n+'× بزرگ‌نمایی',()=>{zoom=n;x=y=0;draw()}));
- btn('نمایش کامل / پرکردن صفحه',()=>{fit=fit==='contain'?'cover':'contain';img.style.objectFit=fit;img.style.width='100%';img.style.height='100%';draw()});
  btn('⛶ تمام‌صفحه',async()=>{try{if(document.fullscreenElement===stage){await document.exitFullscreen();return}if(stage.requestFullscreen){await stage.requestFullscreen();return}throw Error('پشتیبانی نمی‌شود')}catch(e){alert('تمام‌صفحه فعال نشد: '+e.message)}});
  stage.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement===stage){stage.style.maxHeight='none';stage.style.height='100vh';img.style.maxHeight='100vh'}else{stage.style.maxHeight='70vh';stage.style.height='';img.style.maxHeight='70vh'}draw()});
  stage.addEventListener('pointerdown',e=>{const now=Date.now();if(e.pointerType==='touch'&&now-lastTap<300&&pointers.size===0){reset();lastTap=0;e.preventDefault();return}lastTap=now;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});try{stage.setPointerCapture(e.pointerId)}catch{}if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={distance:Math.hypot(a.x-b.x,a.y-b.y)||1,zoom}}e.preventDefault()});
