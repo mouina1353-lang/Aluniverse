@@ -93,6 +93,11 @@ function openStudio(){
  const modelInfo=make('p','در حال بررسی موتور تولید ویدئو...');modelInfo.style.cssText='font-size:14px;color:#24126a';
  const modeLabel=make('label','حالت تولید ویدئو');const modeSelect=make('select');[['standard','استاندارد (فعال)'],['realistic','فوق‌واقع‌گرایانه (در انتظار تأیید موتور)']].forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;if(value==='realistic')o.disabled=true;modeSelect.append(o)});
  const candidateLabel=make('label','نام مدل Replicate برای بررسی (owner/model)');const candidateInput=make('input');candidateInput.type='text';candidateInput.placeholder='مثلاً نام دقیق مدل از صفحه Replicate';candidateInput.autocomplete='off';
+ make('p','آماده‌سازی تصاویر مرجع Kling (بدون تولید پولی). تصویر شروع الزامی است؛ تصویر پایان اختیاری. لینک مستقیم HTTPS تصاویر را از گالری کپی کنید.');
+ make('label','نشانی تصویر شروع برای Kling');const startImage=make('input');startImage.type='url';startImage.placeholder='https://.../start.png';
+ make('label','نشانی تصویر پایان (اختیاری)');const endImage=make('input');endImage.type='url';endImage.placeholder='https://.../end.png';
+ const checkImages=make('button','بررسی رایگان نشانی تصاویر');checkImages.type='button';const imageResult=make('p','لینک‌ها هنوز بررسی نشده‌اند.');
+ checkImages.onclick=()=>{const valid=v=>{try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password&&!!u.hostname}catch{return false}};const a=startImage.value.trim(),b=endImage.value.trim();imageResult.textContent=!valid(a)?'❌ لینک HTTPS معتبر تصویر شروع لازم است.':b&&!valid(b)?'❌ لینک تصویر پایان معتبر نیست.':'✅ قالب لینک‌ها معتبر است. دسترسی مدل به فایل‌ها، تعرفه و کیفیت هنوز بررسی نشده؛ Kling همچنان غیرفعال است.'};
  const checkModel=make('button','🔎 بررسی رایگان مشخصات موتور جایگزین');checkModel.type='button';
  const checkResult=make('p','این بررسی فقط مشخصات فنی را می‌خواند؛ ویدئو تولید نمی‌کند.');checkResult.style.cssText='font-size:13px;white-space:pre-wrap';
  checkModel.onclick=async()=>{checkModel.disabled=true;checkResult.textContent='در حال بررسی بدون هزینه تولید...';try{
