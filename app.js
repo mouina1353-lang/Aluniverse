@@ -98,7 +98,7 @@ function openStudio(){
  make('label','نشانی تصویر پایان (اختیاری)');const endImage=make('input');endImage.type='url';endImage.placeholder='https://.../end.png';
 
  make('p','برای بارگذاری یا انتخاب تصویر، رمز خصوصی گالری را در کادر پایین همین صفحه وارد کنید. لینک‌های انتخابی یک ساعت اعتبار دارند.');
- let startUploader=null;
+ let startUploader=null,endUploader=null,endFileChosen=()=>false;
  const pickReference=(target,label)=>{
   make('label',label);const file=make('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
   const upload=make('button','بارگذاری تصویر انتخاب‌شده');upload.type='button';
@@ -109,7 +109,7 @@ function openStudio(){
   let localUrl='';const revoke=()=>{if(localUrl){URL.revokeObjectURL(localUrl);localUrl=''}};
   const show=url=>{preview.src=url;preview.hidden=false;preview.style.display='block';clear.hidden=false};
   clear.onclick=()=>{revoke();target.value='';file.value='';select.value='';preview.removeAttribute('src');preview.hidden=true;preview.style.display='none';clear.hidden=true;info.textContent='تصویر حذف شد.'};
-  file.onchange=()=>{revoke();if(file.files?.[0]){localUrl=URL.createObjectURL(file.files[0]);show(localUrl);info.textContent='پیش‌نمایش محلی؛ برای ثبت، بارگذاری را بزنید.'}};
+  file.onchange=()=>{revoke();target.value='';if(file.files?.[0]){localUrl=URL.createObjectURL(file.files[0]);show(localUrl);info.textContent='پیش‌نمایش محلی؛ برای ثبت، بارگذاری را بزنید.'}};
   preview.onerror=()=>{info.textContent='❌ تصویر باز نشد یا لینک منقضی شده است.';preview.hidden=true;preview.style.display='none'};
 
   const doUpload=async()=>{const f=file.files?.[0];if(!f){info.textContent='ابتدا تصویر را انتخاب کنید.';return false}
@@ -121,6 +121,7 @@ function openStudio(){
   };
   upload.onclick=doUpload;
   if(target===startImage)startUploader=doUpload;
+  if(target===endImage){endUploader=doUpload;endFileChosen=()=>!!file.files?.[0]}
   gallery.onclick=async()=>{if(!pass.value){info.textContent='رمز خصوصی گالری را پایین صفحه وارد کنید.';return}
    gallery.disabled=true;info.textContent='در حال دریافت گالری...';
    try{const r=await fetch('/api/gallery/list?kind=image&page=0',{headers:{'x-aluniverse-upload-password':pass.value},cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای گالری');
@@ -136,6 +137,7 @@ function openStudio(){
  checkImages.onclick=async()=>{
  const valid=v=>{try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password&&!!u.hostname}catch{return false}};
  if(!startImage.value.trim()&&startUploader){imageResult.textContent='در حال ثبت خودکار تصویر شروع...';const ok=await startUploader();if(!ok){imageResult.textContent='❌ تصویر شروع هنوز بارگذاری نشده است؛ پیام زیر تصویر را بررسی کنید.';return}}
+ if(!endImage.value.trim()&&endUploader&&endFileChosen()){imageResult.textContent='در حال ثبت خودکار تصویر پایان...';const ok=await endUploader();if(!ok){imageResult.textContent='❌ بارگذاری تصویر پایان انجام نشد؛ پیام زیر تصویر را بررسی کنید.';return}}
  const a=startImage.value.trim(),b=endImage.value.trim();
  if(!valid(a)||b&&!valid(b)){imageResult.textContent='❌ نشانی HTTPS معتبر تصویر لازم است.';return}
  imageResult.textContent='در حال بررسی بازشدن تصاویر...';checkImages.disabled=true;
@@ -147,6 +149,7 @@ function openStudio(){
  [['','انتخاب نامزد'],['kwaivgi/kling-v2.1','Kling 2.1 (تصویر به ویدئو)'],['black-forest-labs/flux-kontext-pro','FLUX Kontext Pro (ویرایش تصویر)'],['black-forest-labs/flux-schnell','FLUX Schnell (موتور تصویر فعلی)']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;compareSelect.append(o)});
  compareSelect.onchange=()=>{if(compareSelect.value)candidateInput.value=compareSelect.value};
  const compareNote=make('p','این فهرست رتبه‌بندی کیفیت یا تأیید دسترسی نیست؛ فقط نامزدهای بررسی API هستند. مدل‌های Veo/Runway تا تأیید مسیر دسترسی به Replicate در فهرست نیستند.');compareNote.style.fontSize='12px';
+ const engineGuide=make('p','راهنمای انتخاب موتور: FLUX Schnell برای تولید سریع تصویر؛ FLUX Kontext Pro برای ویرایش تصویر مرجع؛ Kling 2.1 برای تصویر به ویدئو. بررسی مشخصات رایگان است؛ هیچ‌یک با این فهرست به‌صورت خودکار به تولید پولی متصل نمی‌شوند.');engineGuide.style.cssText='font-size:13px;line-height:2;background:#f5f1ff;padding:10px;border-radius:10px';
  const checkModel=make('button','🔎 بررسی رایگان مشخصات موتور جایگزین');checkModel.type='button';
  const checkResult=make('p','این بررسی فقط مشخصات فنی را می‌خواند؛ ویدئو تولید نمی‌کند.');checkResult.style.cssText='font-size:13px;white-space:pre-wrap';
  checkModel.onclick=async()=>{checkModel.disabled=true;checkResult.textContent='در حال بررسی بدون هزینه تولید...';try{
