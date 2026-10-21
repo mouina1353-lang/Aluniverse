@@ -156,6 +156,12 @@ function openStudio(){
  const r=await fetch('/api/media/model-check?model='+encodeURIComponent(candidateInput.value.trim()),{cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای بررسی');
  checkResult.textContent=d.configured?'مدل جایگزین: '+d.model+'\nورودی‌ها: '+(d.inputs||[]).join('، ')+'\nالزامی: '+(d.required||[]).join('، ')+'\nسازگاری با استودیوی فعلی: '+(d.compatibleWithCurrentTextOnlyStudio?'نیازمند بررسی بیشتر':'ناسازگار با ورودی فعلی متن‌به‌ویدئو')+'\nتصویر شروع الزامی: '+(d.needsStartImage?'بله':'خیر')+'\nتصویر پایان پشتیبانی می‌شود: '+(d.supportsEndImage?'بله':'خیر')+'\n'+d.warning:d.message+'\nبرای بررسی، نام دقیق مدل را در کادر بالا وارد کنید.';
  }catch(e){checkResult.textContent='بررسی انجام نشد: '+e.message}finally{checkModel.disabled=false}};
+ const preflightButton=make('button','🛡️ بررسی نهایی رایگان اتصال Kling (بدون تولید)');preflightButton.type='button';
+ const preflightResult=make('p','در این بررسی هیچ ویدئویی ساخته نمی‌شود و هزینه تولید ندارد.');preflightResult.style.cssText='font-size:13px;white-space:pre-wrap;line-height:2';
+ preflightButton.onclick=async()=>{preflightButton.disabled=true;preflightResult.textContent='در حال بررسی مشخصات Kling...';try{
+ const r=await fetch('/api/media/kling-preflight',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای ارتباط');
+ preflightResult.textContent='مدل: '+d.model+'\nتصویر شروع: '+(d.hasStart?'پشتیبانی می‌شود':'پشتیبانی نمی‌شود')+'\nتصویر پایان: '+(d.hasEnd?'پشتیبانی می‌شود':'پشتیبانی نمی‌شود')+'\nپرامپت: '+(d.hasPrompt?'پشتیبانی می‌شود':'پشتیبانی نمی‌شود')+'\nسازگاری اولیه با تصویر مرجع: '+(d.compatibleWithReferenceStudio?'بله':'خیر')+'\nتعرفه: تأیید نشده\nدسترسی تولید حساب: تأیید نشده\nتولید پولی: غیرفعال\n'+d.message;
+ }catch(e){preflightResult.textContent='❌ بررسی انجام نشد: '+e.message}finally{preflightButton.disabled=false}};
  let model5='minimax/video-01',model10='wan-video/wan-2.2-t2v-fast';
  fetch('/api/media/config',{cache:'no-store'}).then(r=>r.json()).then(d=>{model5=d.video?.model||model5;model10=d.video?.model10||model10;modelInfo.textContent='موتور انتخابی: '+(Number(duration.value)===10?model10:model5)+' | حالت استاندارد. حالت فوق‌واقع‌گرایانه تا بررسی ورودی و هزینه مدل جایگزین غیرفعال است.'}).catch(()=>{modelInfo.textContent='نام موتور در دسترس نیست؛ تولید پولی را فقط پس از بررسی تنظیمات انجام دهید.'});
  const paidTitle=make('p');const pass=make('input');pass.type='password';pass.placeholder='رمز خصوصی گالری/بارگذاری';pass.autocomplete='off';
