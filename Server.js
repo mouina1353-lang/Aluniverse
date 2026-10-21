@@ -8,7 +8,7 @@ const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const supaUrl=()=>clean(process.env.SUPABASE_URL||process.env.SUPABASE_PROJECT_URL).replace(/\/$/,'');
 const supaKey=()=>clean(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY);
 const galleryConfigured=()=>!!(supaUrl()&&supaKey());
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.27',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.28',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
@@ -22,7 +22,34 @@ app.post('/api/ai/extract-document',express.raw({type:'application/octet-stream'
   let extracted='';
   if(kind==='pdf'){
    if(bytes.subarray(0,5).toString()!=='%PDF-')throw Error('ساختار فایل PDF معتبر نیست.');
-   const parse=require('pdf-parse');const result=await parse(bytes,{max:30});extracted=String(result.text||'');
+   // Primary parser first. A modern PDF.js parser is a read-only fallback for broken XRef tables.
+   let primaryError=null;
+   try{
+    const parse=require('pdf-parse');const result=await parse(bytes,{max:30});extracted=String(result.text||'');
+   }catch(err){primaryError=err;console.warn('PDF primary parser failed:',String(err.message||err).slice(0,160));}
+   if(primaryError||!extracted.trim()){
+    let pdf=null;
+    try{
+     const pdfjs=require('pdfjs-dist/legacy/build/pdf.js');
+     const task=pdfjs.getDocument({data:new Uint8Array(bytes),disableFontFace:true,useSystemFonts:true,stopAtErrors:false,isEvalSupported:false});
+     pdf=await task.promise;
+     const parts=[];
+     for(let pageNo=1;pageNo<=Math.min(pdf.numPages,30);pageNo++){
+      const page=await pdf.getPage(pageNo);
+      const content=await page.getTextContent();
+      const text=content.items.map(item=>String(item.str||'')).join(' ');
+      parts.push(text);
+      if(parts.join('\n').length>12000)break;
+     }
+     const alternate=parts.join('\n').trim();
+     if(alternate)extracted=alternate;
+     else if(primaryError)throw primaryError;
+    }catch(fallbackError){
+     console.warn('PDF fallback parser failed:',String(fallbackError.message||fallbackError).slice(0,160));
+     if(primaryError)throw Error('ساختار داخلی PDF با دو روش قابل خواندن نبود. ممکن است فایل آسیب‌دیده، اسکن‌شده یا دارای محدودیت دسترسی باشد.');
+     if(!extracted.trim())throw Error('متن قابل استخراج پیدا نشد. ممکن است PDF اسکن‌شده باشد و به OCR نیاز داشته باشد.');
+    }finally{if(pdf)await pdf.destroy().catch(()=>{});}
+   }
   }else if(kind==='docx'){
    if(bytes[0]!==0x50||bytes[1]!==0x4b)throw Error('ساختار Word DOCX معتبر نیست.');
    const mammoth=require('mammoth');const result=await mammoth.extractRawText({buffer:bytes});extracted=String(result.value||'');
