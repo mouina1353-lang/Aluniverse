@@ -519,7 +519,12 @@ function academyPanel(){
  const topic=document.createElement('select');topic.setAttribute('aria-label','رشته آموزشی');
  for(const t of academyTopics){const o=document.createElement('option');o.textContent=t;o.value=t;topic.append(o)}
  topic.style.cssText='width:100%;max-width:100%;padding:10px;margin:8px 0';box.append(topic);
- const row=document.createElement('div');row.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:10px 0';box.append(row);
+ // Native disclosure: the four existing buttons retain their original handlers.
+ const practice=document.createElement('details');practice.id='academy-practice-options';
+ practice.style.cssText='margin:12px 0;border:1px solid #d6c9ee;border-radius:12px;padding:10px;background:#f6f2fc';
+ const practiceTitle=document.createElement('summary');practiceTitle.textContent='🧩 آموزش و تمرین عملی (۴ گزینه)';
+ practiceTitle.style.cssText='cursor:pointer;font-weight:bold;padding:6px';practice.append(practiceTitle);
+ const row=document.createElement('div');row.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px';practice.append(row);box.append(practice);
  const button=(label,handler)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:10px;border-radius:9px';b.onclick=handler;row.append(b);return b};
  const prompt=()=>academyRequest?.value.trim()||el('user-input').value.trim()||('درس اول '+topic.value+' از مقدماتی');
  button('📖 آماده‌سازی درس',()=>{el('user-input').value='آموزش عملی '+topic.value+'؛ موضوع: '+prompt()+'. هدف، پیش‌نیاز، مراحل اجرایی دقیق، مثال، تمرین عملی و آزمون کوتاه را ارائه کن. اگر مراحل به محیط نرم‌افزار نیاز دارد، مسیر منوها را توضیح بده و موارد وابسته به نسخه نرم‌افزار را مشخص کن.';el('run-button').click()});
