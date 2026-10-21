@@ -68,16 +68,29 @@ function validUrl(url){return typeof url==='string'&&/^https:\/\//i.test(url)}
 const jobs=new Map();
 const supportedRatios=new Set(['1:1','16:9','9:16','4:3','3:4']);
 async function translatePrompt(prompt){
+  const original=String(prompt||'').trim();
+  if(!original)throw Error('متن درخواست خالی است.');
+  // English-only visual prompts must not depend on the translation service.
+  if(!/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(original))return original;
   const key=clean(process.env.GROQ_API_KEY);
-  if(!key)throw Error('برای ترجمه خودکار، کلید GROQ_API_KEY در Render لازم است.');
-  const data=await request('https://api.groq.com/openai/v1/chat/completions',{
-    method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
-    body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',temperature:0,
-      messages:[{role:'system',content:'Translate the user visual generation prompt faithfully into clear English for an image/video generator. Preserve subjects, actions, exact details and intent. Do not invent details. Return ONLY the English prompt, without quotes or commentary.'},{role:'user',content:prompt}],max_tokens:700})
-  },35000);
-  const result=String(data?.choices?.[0]?.message?.content||'').trim();
-  if(!result)throw Error('ترجمه پرامپت ناموفق بود؛ درخواست تولید ارسال نشد.');
-  return result;
+  if(!key)throw Error('برای ترجمه خودکار متن فارسی، کلید GROQ_API_KEY در Render لازم است.');
+  const model=process.env.GROQ_MODEL||'openai/gpt-oss-20b';
+  for(let attempt=1;attempt<=2;attempt++){
+    const payload={model,temperature:0,
+      messages:[{role:'system',content:'Translate the user visual generation prompt faithfully into clear English for an image/video generator. Preserve subjects, actions, exact details and intent. Do not invent details. Return ONLY the English prompt, without quotes or commentary.'},{role:'user',content:original}],
+      max_tokens:attempt===1?700:1600};
+    // GPT-OSS may use its output budget for reasoning and return empty content.
+    if(/^openai\/gpt-oss/i.test(model))payload.reasoning_effort='low';
+    const data=await request('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    },35000);
+    const choice=data?.choices?.[0];
+    const result=String(choice?.message?.content||'').trim();
+    if(result)return result;
+    console.warn('PROMPT TRANSLATION EMPTY',JSON.stringify({attempt,model,finish_reason:choice?.finish_reason||'unknown',output_tokens:data?.usage?.completion_tokens||0}));
+  }
+  throw Error('ترجمه پرامپت پاسخی برنگرداند؛ درخواست تولید ارسال نشد. جزئیات در Render Logs ثبت شد.');
 }
 function replicateHeaders(){const token=clean(process.env.REPLICATE_API_TOKEN);if(!token)throw Error('توکن Replicate تنظیم نشده است.');return {Authorization:`Bearer ${token}`,'Content-Type':'application/json'};}
 const tenConfigured=()=>process.env.REPLICATE_VIDEO_10_ENABLED==='true';
