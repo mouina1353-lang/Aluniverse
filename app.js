@@ -455,11 +455,11 @@ function setupAiAttachments(){
  const old=document.getElementById('al-ai-attachments');if(old)old.remove();
  if(group!=='ai')return;
  const wrap=document.createElement('div');wrap.id='al-ai-attachments';wrap.style.cssText='margin:12px 0;padding:12px;border:1px solid #ddd4ef;border-radius:12px';
- const label=document.createElement('label');label.textContent='📎 پیوست از گوشی (فایل متنی)';label.style.cssText='display:block;font-weight:bold;margin-bottom:8px';
- const input=document.createElement('input');input.type='file';input.id='al-ai-file';input.accept='.txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json';input.style.maxWidth='100%';
- const status=document.createElement('p');status.id='al-ai-file-status';status.style.cssText='font-size:.9em;margin:7px 0';status.textContent='فعلاً فایل‌های متنی تا ۱ مگابایت پردازش می‌شوند؛ PDF، Word و تصویر هنوز به موتور تحلیل متصل نیستند.';
+ const label=document.createElement('label');label.textContent='📎 پیوست از گوشی (متن، PDF و Word)';label.style.cssText='display:block;font-weight:bold;margin-bottom:8px';
+ const input=document.createElement('input');input.type='file';input.id='al-ai-file';input.accept='.txt,.md,.csv,.json,.pdf,.docx,text/plain,text/markdown,text/csv,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';input.style.maxWidth='100%';
+ const status=document.createElement('p');status.id='al-ai-file-status';status.style.cssText='font-size:.9em;margin:7px 0';status.textContent='TXT، MD، CSV و JSON تا ۱ مگابایت؛ PDF و DOCX تا ۵ مگابایت. فایل‌های اسکن‌شده و تصاویر هنوز پشتیبانی نمی‌شوند.';
  const clear=document.createElement('button');clear.type='button';clear.textContent='حذف پیوست';clear.onclick=()=>{input.value='';status.textContent='پیوست حذف شد.'};
- input.onchange=()=>{const f=input.files?.[0];status.textContent=f?(f.size>1024*1024?'❌ حجم فایل بیش از ۱ مگابایت است.':'انتخاب شد: '+f.name+' ('+Math.round(f.size/1024)+' کیلوبایت)'):'فایلی انتخاب نشده است.'};
+ input.onchange=()=>{const f=input.files?.[0];status.textContent=f?(f.size>(/\.(pdf|docx)$/i.test(f.name)?5:1)*1024*1024?'❌ حجم فایل بیش از حد مجاز است.':'انتخاب شد: '+f.name+' ('+Math.round(f.size/1024)+' کیلوبایت)'):'فایلی انتخاب نشده است.'};
  wrap.append(label,input,status,clear);el('user-input').before(wrap);
 }
 
@@ -552,10 +552,18 @@ async function run(){
     if(kind==='ai'){
       let attachmentText='';
       if(attached){
-       if(attached.size>1024*1024)throw Error('حجم پیوست باید کمتر از ۱ مگابایت باشد.');
-       if(!/\.(txt|md|csv|json)$/i.test(attached.name))throw Error('در این نسخه فقط TXT، MD، CSV و JSON پردازش می‌شوند.');
-       attachmentText=await attached.text();
-       if(attachmentText.length>12000)throw Error('متن پیوست طولانی است؛ حداکثر ۱۲ هزار نویسه مجاز است.');
+       const docKind=attached.name.toLowerCase().endsWith('.pdf')?'pdf':attached.name.toLowerCase().endsWith('.docx')?'docx':null;
+       if(docKind){
+        if(attached.size>5*1024*1024)throw Error('حجم PDF یا DOCX باید حداکثر ۵ مگابایت باشد.');
+        const extracted=await fetch('/api/ai/extract-document',{method:'POST',headers:{'Content-Type':'application/octet-stream','x-document-kind':docKind},body:attached});
+        const result=await extracted.json();if(!extracted.ok||!result.success)throw Error(result.error||'استخراج متن سند ناموفق بود.');
+        attachmentText=result.text;
+       }else{
+        if(attached.size>1024*1024)throw Error('حجم فایل متنی باید حداکثر ۱ مگابایت باشد.');
+        if(!/\.(txt|md|csv|json)$/i.test(attached.name))throw Error('فرمت مجاز: TXT، MD، CSV، JSON، PDF یا DOCX.');
+        attachmentText=await attached.text();
+       }
+       if(attachmentText.length>12000)throw Error('متن پیوست بیش از ۱۲ هزار نویسه است.');
       }
       const response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`ابزار: ${meta[group][1]}؛ زیرابزار: ${sub}؛ زبان: ${el('language').value}\n${group==='web'?'اگر درخواست ساخت صفحه وب است، یک فایل HTML کامل و مستقل با CSS و JavaScript داخلی تولید کن؛ پاسخ را با <!DOCTYPE html> شروع و با </html> تمام کن. کد را مختصر و کاربردی بنویس تا در محدودیت پاسخ جا شود؛ حداکثر ۳ محصول نمونه و CSS فشرده، بدون توضیحات بیرون از HTML. تمام تگ‌ها، به‌ویژه script و body و html، را ببند.':''}\n${sub==='آکادمی آلیونیورسی'?'نقش مدرس متخصص را داشته باش؛ درس گام‌به‌گام و کاربردی با هدف، پیش‌نیاز، مثال، تمرین و آزمون کوتاه ارائه بده. از ادعای اعطای مدرک رسمی خودداری کن.':''}\n${sub==='مرکز مدل‌های هوش مصنوعی'?'مدل‌ها و کاربردهایشان را معرفی و مقایسه کن؛ ادعای اتصال واقعی به مدل‌های دیگر نکن. اتصال اجرایی فعلی فقط از طریق سرویس‌های پیکربندی‌شده است.':''}\n${sub==='فریلنسری و کسب درآمد'?'به‌عنوان مشاور فریلنسری درباره مهارت، نمونه‌کار، قرارداد، قیمت‌گذاری، جذب مشتری و ریسک پرداخت راهنمای عملی بده؛ تضمین درآمد نده.':''}\n${sub==='تحلیل ایده'?'ایده را با معیارهای نیاز بازار، مشتری هدف، نقاط قوت و ضعف، امکان‌سنجی فنی، هزینه تقریبی، ریسک‌ها، رقبا، مدل درآمد و پیشنهاد اجرای MVP تحلیل کن. هزینه‌ها و اعداد را تخمینی و همراه با فرضیات بیان کن.':''}\n${sub==='دانشنامه جامع قرآن، حدیث، تفسیر و احکام'?'در نقش دستیار پژوهشی اسلامی پاسخ بده؛ قرآن، تفاسیر شیعه و اهل سنت، حدیث و سندشناسی و فقه تطبیقی را از هم تفکیک کن. هیچ آیه، شماره حدیث، سند، درجه صحت، فتوا، نام کتاب یا صفحه را حدس نزن. اگر امکان راستی‌آزمایی مستقیم نداری، صریحاً بگو ارجاع تأیید نشده است. دیدگاه‌های مختلف را با انتساب دقیق و بی‌طرفانه بیان کن. فتوا را به مرجع مشخص و تاریخ استفتا وابسته بدان. از ادعای جست‌وجوی زنده در کتابخانه‌ها خودداری کن. نوع بررسی: '+(document.getElementById('al-research-mode')?.value||'پژوهش موضوعی'):''}
 ${sub==='پژوهش علمی و منابع معتبر'?'در نقش دستیار پژوهش علمی پاسخ بده؛ منابع و DOI و صفحات را جعل نکن، ادعاهای تأییدنشده را مشخص کن و بین مرور اولیه و جست‌وجوی واقعی در پایگاه‌های داده تمایز بگذار. نوع بررسی: '+(document.getElementById('al-research-mode')?.value||'مرور منابع'):''}

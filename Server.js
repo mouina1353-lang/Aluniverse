@@ -8,10 +8,32 @@ const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const supaUrl=()=>clean(process.env.SUPABASE_URL||process.env.SUPABASE_PROJECT_URL).replace(/\/$/,'');
 const supaKey=()=>clean(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY);
 const galleryConfigured=()=>!!(supaUrl()&&supaKey());
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.26',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.27',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
+
+// Read-only document extraction: no external paid AI call is made here.
+app.post('/api/ai/extract-document',express.raw({type:'application/octet-stream',limit:'5mb'}),async(req,res)=>{
+ try{
+  const kind=String(req.headers['x-document-kind']||'').toLowerCase();
+  const bytes=req.body;
+  if(!Buffer.isBuffer(bytes)||!bytes.length||bytes.length>5*1024*1024)return res.status(400).json({success:false,error:'فایل خالی یا بیش از ۵ مگابایت است.'});
+  let extracted='';
+  if(kind==='pdf'){
+   if(bytes.subarray(0,5).toString()!=='%PDF-')throw Error('ساختار فایل PDF معتبر نیست.');
+   const parse=require('pdf-parse');const result=await parse(bytes,{max:30});extracted=String(result.text||'');
+  }else if(kind==='docx'){
+   if(bytes[0]!==0x50||bytes[1]!==0x4b)throw Error('ساختار Word DOCX معتبر نیست.');
+   const mammoth=require('mammoth');const result=await mammoth.extractRawText({buffer:bytes});extracted=String(result.value||'');
+  }else return res.status(415).json({success:false,error:'فقط PDF و DOCX پشتیبانی می‌شوند. فایل DOC قدیمی را به DOCX تبدیل کنید.'});
+  extracted=extracted.trim();
+  if(!extracted)return res.status(422).json({success:false,error:'متن قابل استخراج پیدا نشد. فایل اسکن‌شده به OCR نیاز دارد که هنوز فعال نیست.'});
+  if(extracted.length>12000)return res.status(413).json({success:false,error:'متن سند بیش از ۱۲ هزار نویسه است؛ لطفاً سند کوتاه‌تر یا بخشی از آن را ارسال کنید.'});
+  res.set('Cache-Control','no-store').json({success:true,text:extracted,characters:extracted.length});
+ }catch(e){console.error('Document extraction:',e.message);res.status(422).json({success:false,error:'خواندن سند ناموفق بود: '+String(e.message).slice(0,160)})}
+});
+
 const base='https://api.replicate.com/v1';
 const models={image:process.env.REPLICATE_IMAGE_MODEL||'black-forest-labs/flux-schnell',image_edit:process.env.REPLICATE_EDIT_MODEL||'',video:process.env.REPLICATE_VIDEO_MODEL||'minimax/video-01',animation:process.env.REPLICATE_ANIMATION_MODEL||'minimax/video-01',video10:process.env.REPLICATE_VIDEO_10_MODEL||'wan-video/wan-2.2-t2v-fast'};
 function urlOf(out){if(typeof out==='string')return out;if(Array.isArray(out))return out.map(urlOf).find(Boolean)||null;if(out&&typeof out==='object'){if(typeof out.url==='string')return out.url;if(typeof out.url==='function')return String(out.url());}return null}
