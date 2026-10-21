@@ -8,7 +8,7 @@ const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const supaUrl=()=>clean(process.env.SUPABASE_URL||process.env.SUPABASE_PROJECT_URL).replace(/\/$/,'');
 const supaKey=()=>clean(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY);
 const galleryConfigured=()=>!!(supaUrl()&&supaKey());
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.20',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.21',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
@@ -236,6 +236,20 @@ app.get('/api/media/kling-preflight',async(req,res)=>{try{
    predictionCreated:false,readyForPaidGeneration:false,
    message:supportsReference?'ورودی‌های لازم برای تصویر به ویدئو وجود دارند؛ اتصال تولید و هزینه هنوز تأیید نشده است.':'ورودی‌های لازم برای تصویر به ویدئو کامل نیستند.'});
  }catch(e){res.status(502).json({success:false,predictionCreated:false,error:e.message})}});
+// Read-only readiness report. Does not call Replicate predictions or charge credits.
+app.get('/api/media/kling-readiness',async(req,res)=>{
+ try{
+  const info=await request(`${base}/models/kwaivgi/kling-v2.1`,{headers:replicateHeaders()},15000);
+  const input=info?.latest_version?.openapi_schema?.components?.schemas?.Input||{};
+  const fields=Object.keys(input.properties||{});
+  const required=input.required||[];
+  const supported=fields.includes('start_image')&&fields.includes('prompt');
+  return res.json({success:true,model:'kwaivgi/kling-v2.1',schemaCompatible:supported,
+    startImageRequired:required.includes('start_image'),endImageSupported:fields.includes('end_image'),
+    required,priceVerified:false,accountGenerationVerified:false,paidGenerationEnabled:false,
+    nextStep:supported?'تأیید تعرفه و اجازه صریح برای یک آزمایش پولی لازم است.':'ورودی‌های مدل برای تولید تصویر به ویدئو سازگار نیست.'});
+ }catch(e){return res.status(502).json({success:false,error:e.message,paidGenerationEnabled:false})}
+});
 app.get('/api/media/config',(_,res)=>res.json({success:true,video:{model:models.video,model10:models.video10,realisticEnabled:false,durations:tenConfigured()?[5,10]:[5],tenSecondsConfigured:tenConfigured(),resolution:['720p'],fps:[25],ratios:['16:9'],note:tenConfigured()?'مدل ۱۰ ثانیه‌ای پیکربندی شده؛ موفقیت تولید باید جداگانه آزمایش شود.':'مدل ۱۰ ثانیه‌ای غیرفعال است.'},image:{ratios:[...supportedRatios],editConfigured:!!models.image_edit},gallery:{configured:galleryConfigured()}}));
 app.post('/api/media/start',async(req,res)=>{
   try{

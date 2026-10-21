@@ -167,6 +167,21 @@ function openStudio(){
  const paidTitle=make('p');const pass=make('input');pass.type='password';pass.placeholder='رمز خصوصی گالری/بارگذاری';pass.autocomplete='off';
  const confirm=make('label');const checkbox=document.createElement('input');checkbox.type='checkbox';confirm.append(checkbox,document.createTextNode(' هزینه تولید فقط یک سکانس را از اعتبار Replicate تأیید می‌کنم.'));
  const go=make('button','تولید آزمایشی فقط یک سکانس');go.type='button';const status=make('p');status.setAttribute('role','status');const videoArea=make('div');
+ const readinessBtn=make('button','🧪 گزارش آمادگی Kling (بدون هزینه)');
+ readinessBtn.type='button';
+ const readinessInfo=make('p','تا تأیید تعرفه و دسترسی، تولید پولی Kling غیرفعال است.');
+ readinessBtn.onclick=async()=>{
+  readinessBtn.disabled=true;readinessInfo.textContent='در حال بررسی رایگان مشخصات...';
+  try{
+   const r=await fetch('/api/media/kling-readiness',{cache:'no-store'});
+   const d=await r.json();
+   if(!r.ok||!d.success)throw Error(d.error||'خطای بررسی');
+   readinessInfo.textContent=d.schemaCompatible?
+    '✅ ورودی‌های Kling سازگارند. تصویر شروع '+(d.startImageRequired?'الزامی':'اختیاری')+' است؛ تصویر پایان '+(d.endImageSupported?'پشتیبانی می‌شود':'پشتیبانی نمی‌شود')+'. ⚠️ تعرفه و دسترسی تولید تأیید نشده؛ تولید پولی Kling غیرفعال است.':
+    '❌ ورودی‌های Kling برای تصویر به ویدئو سازگار نیستند.';
+  }catch(e){readinessInfo.textContent='❌ '+e.message}
+  finally{readinessBtn.disabled=false}
+ };
  const key='aluniverse_studio_draft_v1';let output='',scenes=[],pending=false,pilotId=null,expectedScenes=0,planValid=false;
  const faDigits=t=>String(t).replace(/[۰-۹]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c))).replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));
  const getSeconds=()=>{const m=Number(minuteInput.value),s=Number(secondInput.value);return Number.isInteger(m)&&Number.isInteger(s)&&m>=0&&m<=30&&s>=0&&s<=59?m*60+s:NaN};
