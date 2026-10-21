@@ -509,6 +509,7 @@ const academyCoursePlan={
 function academyPanel(){
  const old=el('academy-panel');if(old)old.remove();
  if(!(group==='ai'&&sub==='آکادمی آلیونیورسی'))return;
+ el('run-button').style.display='none';
  const box=document.createElement('section');box.id='academy-panel';box.className='academy-topics';box.dir='rtl';
  box.style.cssText='padding:14px;border:1px solid #d6c9ee;border-radius:14px;margin:12px 0;background:#faf8ff';
  const heading=document.createElement('strong');heading.textContent='🎓 آکادمی عملی آلیونیورسی';box.append(heading);
@@ -516,10 +517,12 @@ function academyPanel(){
  const topic=document.createElement('select');topic.setAttribute('aria-label','رشته آموزشی');
  for(const t of academyTopics){const o=document.createElement('option');o.textContent=t;o.value=t;topic.append(o)}
  topic.style.cssText='width:100%;max-width:100%;padding:10px;margin:8px 0';box.append(topic);
+ const requestLabel=document.createElement('label');requestLabel.textContent='✍️ درخواست آموزشی شما (ابتدا اینجا بنویسید):';requestLabel.style.cssText='display:block;font-weight:bold;margin:12px 0 5px';box.append(requestLabel);
+ const requestInput=el('user-input');requestInput.placeholder='مثلاً: ساخت جدول فروش و فرمول SUM در Excel';requestInput.style.cssText+=';display:block;width:100%;box-sizing:border-box;min-height:110px;margin-bottom:12px';box.append(requestInput);
  const row=document.createElement('div');row.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:10px 0';box.append(row);
  const button=(label,handler)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:10px;border-radius:9px';b.onclick=handler;row.append(b);return b};
  const prompt=()=>el('user-input').value.trim()||('درس اول '+topic.value+' از مقدماتی');
- button('📖 آماده‌سازی درس',()=>{el('user-input').value='آموزش عملی '+topic.value+'؛ موضوع: '+prompt()+'. هدف، پیش‌نیاز، مراحل اجرایی دقیق، مثال، تمرین عملی و آزمون کوتاه را ارائه کن. اگر مراحل به محیط نرم‌افزار نیاز دارد، مسیر منوها را توضیح بده و موارد وابسته به نسخه نرم‌افزار را مشخص کن.';el('run-button').click()});
+ button('📖 آموزش متنی',()=>{el('user-input').value='آموزش عملی '+topic.value+'؛ موضوع: '+prompt()+'. هدف، پیش‌نیاز، مراحل اجرایی دقیق، مثال، تمرین عملی و آزمون کوتاه را ارائه کن. اگر مراحل به محیط نرم‌افزار نیاز دارد، مسیر منوها را توضیح بده و موارد وابسته به نسخه نرم‌افزار را مشخص کن.';el('run-button').click()});
  button('🧩 تمرین و آزمون',()=>{el('user-input').value='برای آموزش '+topic.value+' درباره '+prompt()+'، یک تمرین قابل اجرا با معیار ارزیابی و پنج سؤال آزمون همراه با پاسخ‌های جداگانه طراحی کن.';el('run-button').click()});
  const plan=document.createElement('p');plan.style.cssText='white-space:pre-wrap;font-size:14px;line-height:1.9;background:#f1ecfa;padding:10px;border-radius:10px';box.insertBefore(plan,row);
  const updatePlan=()=>{plan.textContent='مسیر پیشنهادی دوره: '+(academyCoursePlan[topic.value]||'مقدماتی ← متوسط ← پیشرفته؛ درس عملی، تمرین، آزمون و پروژه نهایی.')};topic.addEventListener('change',updatePlan);updatePlan();
@@ -535,6 +538,7 @@ function academyPanel(){
  b.onclick=async()=>{
   if(working)return;
   if(!check.checked){state.textContent='ابتدا تأیید هزینه تولید یک خروجی را فعال کنید.';return}
+  if(kind==='video' && /Excel|Word|PowerPoint|Access|Outlook|فتوشاپ|Photoshop|Illustrator|CorelDRAW|InShot|Premiere|After Effects|ویندوز|کامپیوتر|PDF|تایپ|ICDL|برنامه‌نویسی|طراحی سایت/i.test(topic.value)){state.textContent='⚠️ ویدیوی مولد هوش مصنوعی برای نمایش دقیق منوها و مراحل واقعی این نرم‌افزار قابل اعتماد نیست. هزینه‌ای ثبت نشد. برای این دوره از «آموزش متنی» و «اجرای تمرین عملی» استفاده کنید؛ آموزش ویدیویی دقیق به ضبط واقعی صفحه نیاز دارد.';return}
   if(!window.confirm('آیا هزینه تولید فقط یک '+(kind==='image'?'تصویر':'ویدیوی ۵ ثانیه‌ای')+' از اعتبار Replicate را تأیید می‌کنید؟'))return;
   working=true;check.checked=false;for(const x of mediaRow.querySelectorAll('button'))x.disabled=true;
   const lesson=prompt().slice(0,1400);
@@ -544,7 +548,7 @@ function academyPanel(){
   const requestId='academy_'+Date.now()+'_'+Math.random().toString(36).slice(2,10);
   try{
    state.textContent='در حال ارسال درخواست تولید (هزینه‌دار)...';
-   const r=await fetch('/api/media/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,prompt:description,request_id:requestId,aspect_ratio:kind==='image'?'3:2':'16:9',...(kind==='video'?{duration:5}:{})})});
+   const r=await fetch('/api/media/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,prompt:description,request_id:requestId,aspect_ratio:'16:9',...(kind==='video'?{duration:5}:{})})});
    const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'شروع تولید ناموفق بود');
    if(!data.prediction_id)throw Error('شناسه پردازش برنگشت؛ درخواست دوباره نفرستید و لاگ Render را بررسی کنید.');
    state.textContent='در حال تولید؛ شناسه: '+data.prediction_id;
@@ -570,9 +574,9 @@ function academyPanel(){
   finally{working=false;for(const x of mediaRow.querySelectorAll('button'))x.disabled=false}
  };
  };
- mediaButton('🖼️ تولید تصویر آموزشی','image');
- mediaButton('🎬 تولید ویدیوی آموزشی ۵ ثانیه‌ای','video');
- el('user-input').before(box);
+ mediaButton('🖼️ آموزش تصویری','image');
+ mediaButton('🎬 آموزش ویدیویی ۵ ثانیه‌ای','video');
+ el('workspace').insertBefore(box,el('workspace').firstChild);
 }
 let video10Enabled=false;
 async function refreshVideoConfig(){const selector=el('video-duration');const note=el('video-duration-note');if(!selector)return;selector.value='5';video10Enabled=false;selector.querySelector('option[value="10"]').disabled=true;note.textContent='در حال بررسی مدل‌های فعال...';try{const r=await fetch('/api/media/config',{cache:'no-store'});if(!r.ok)throw Error('config');const d=await r.json();video10Enabled=!!d.video?.tenSecondsConfigured;selector.querySelector('option[value="10"]').disabled=!video10Enabled;note.textContent=video10Enabled?'مدل ۱۰ ثانیه‌ای تنظیم شده؛ نتیجه واقعی باید آزمایش شود.':'۱۰ ثانیه هنوز موتور تأییدشده ندارد؛ فقط ۵ ثانیه قابل اجراست.';}catch(e){note.textContent='بررسی تنظیمات ویدئو ناموفق بود؛ ۱۰ ثانیه غیرفعال است.'}}
