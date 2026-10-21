@@ -8,7 +8,7 @@ const clean=x=>String(x||'').trim().replace(/^["']|["']$/g,'');
 const supaUrl=()=>clean(process.env.SUPABASE_URL||process.env.SUPABASE_PROJECT_URL).replace(/\/$/,'');
 const supaKey=()=>clean(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_KEY);
 const galleryConfigured=()=>!!(supaUrl()&&supaKey());
-app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.21',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
+app.get('/api/status',(_,res)=>res.json({success:true,service:'Aluniverse Backend',version:'6.6.22',groq:!!process.env.GROQ_API_KEY,replicate:!!process.env.REPLICATE_API_TOKEN,galleryConfigured:galleryConfigured()}));
 app.get('/api/health',(_,res)=>res.json({success:true,status:'healthy'}));
 async function request(url,opts={},ms=45000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);try{const r=await fetch(url,{...opts,signal:controller.signal});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={detail:raw.slice(0,300)}}if(!r.ok)throw new Error(String(data?.detail?.message||data?.detail||data?.error?.message||data?.error||`HTTP ${r.status}`).slice(0,400));return data}finally{clearTimeout(timer)}}
 app.post('/api/ai',async(req,res)=>{try{const message=String(req.body?.message||'').trim();if(!message)return res.status(400).json({success:false,error:'درخواست خالی است.'});const token=clean(process.env.GROQ_API_KEY);if(!token)throw Error('کلید Groq تنظیم نشده است.');const data=await request('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.GROQ_MODEL||'openai/gpt-oss-20b',messages:[{role:'system',content:'You are Aluniverse AI. Respond in the user language.'},{role:'user',content:message}],max_tokens:1500})});res.json({success:true,answer:data?.choices?.[0]?.message?.content||'پاسخی دریافت نشد.'})}catch(e){console.error('AI:',e.message);res.status(502).json({success:false,error:e.message})}});
@@ -249,6 +249,32 @@ app.get('/api/media/kling-readiness',async(req,res)=>{
     required,priceVerified:false,accountGenerationVerified:false,paidGenerationEnabled:false,
     nextStep:supported?'تأیید تعرفه و اجازه صریح برای یک آزمایش پولی لازم است.':'ورودی‌های مدل برای تولید تصویر به ویدئو سازگار نیست.'});
  }catch(e){return res.status(502).json({success:false,error:e.message,paidGenerationEnabled:false})}
+});
+// No predictions are created here. Validate references and the exact model input schema.
+app.post('/api/media/kling-dry-run',async(req,res)=>{
+ try{
+  const start=String(req.body?.start_image||'').trim();
+  const end=String(req.body?.end_image||'').trim();
+  const prompt=String(req.body?.prompt||'').trim();
+  const duration=Number(req.body?.duration||5);
+  const https=u=>{try{const x=new URL(u);return x.protocol==='https:'&&!!x.hostname&&!x.username&&!x.password}catch{return false}};
+  if(!https(start)||end&&!https(end))return res.status(400).json({success:false,error:'نشانی HTTPS تصویر شروع یا پایان معتبر نیست.',predictionCreated:false});
+  if(!prompt||prompt.length>3000)return res.status(400).json({success:false,error:'متن پرامپت باید بین ۱ تا ۳۰۰۰ نویسه باشد.',predictionCreated:false});
+  const info=await request(`${base}/models/kwaivgi/kling-v2.1`,{headers:replicateHeaders()},15000);
+  const schema=info?.latest_version?.openapi_schema?.components?.schemas?.Input||{};
+  const props=schema.properties||{};const required=schema.required||[];
+  const fields=Object.keys(props);
+  if(!fields.includes('start_image')||!fields.includes('prompt'))throw Error('مدل ورودی‌های لازم را ندارد.');
+  if(end&&!fields.includes('end_image'))throw Error('مدل تصویر پایان را نمی‌پذیرد.');
+  if(fields.includes('duration')&&props.duration.enum&&!props.duration.enum.map(String).includes(String(duration)))throw Error('مدت انتخابی در مدل پشتیبانی نمی‌شود.');
+  const prepared={start_image:start,prompt,duration};
+  if(end)prepared.end_image=end;
+  const missing=required.filter(k=>!(k in prepared));
+  return res.json({success:true,model:'kwaivgi/kling-v2.1',duration,hasStart:true,hasEnd:!!end,
+   requiredFields:required,missingRequiredFields:missing,readyForSubmission:missing.length===0,
+   priceVerified:false,accountGenerationVerified:false,predictionCreated:false,paidGenerationEnabled:false,
+   message:missing.length?'فیلدهای الزامی دیگر مدل باید تنظیم شوند.':'ساختار اولیه آماده است؛ هزینه و دسترسی هنوز تأیید نشده است.'});
+ }catch(e){return res.status(502).json({success:false,error:e.message,predictionCreated:false})}
 });
 app.get('/api/media/config',(_,res)=>res.json({success:true,video:{model:models.video,model10:models.video10,realisticEnabled:false,durations:tenConfigured()?[5,10]:[5],tenSecondsConfigured:tenConfigured(),resolution:['720p'],fps:[25],ratios:['16:9'],note:tenConfigured()?'مدل ۱۰ ثانیه‌ای پیکربندی شده؛ موفقیت تولید باید جداگانه آزمایش شود.':'مدل ۱۰ ثانیه‌ای غیرفعال است.'},image:{ratios:[...supportedRatios],editConfigured:!!models.image_edit},gallery:{configured:galleryConfigured()}}));
 app.post('/api/media/start',async(req,res)=>{

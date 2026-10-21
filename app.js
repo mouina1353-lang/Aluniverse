@@ -182,6 +182,24 @@ function openStudio(){
   }catch(e){readinessInfo.textContent='❌ '+e.message}
   finally{readinessBtn.disabled=false}
  };
+ const dryBtn=make('button','🔎 بررسی رایگان ورودی واقعی Kling');
+ dryBtn.type='button';
+ const dryInfo=make('p','فقط اعتبارسنجی ورودی‌ها؛ بدون تولید و هزینه.');
+ dryBtn.onclick=async()=>{
+  dryBtn.disabled=true;dryInfo.textContent='در حال بررسی ورودی‌ها...';
+  try{
+   const promptValue=(typeof promptInput!=='undefined'&&promptInput?.value)?promptInput.value.trim():'';
+   const r=await fetch('/api/media/kling-dry-run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    start_image:startImage.value.trim(),end_image:endImage.value.trim(),
+    prompt:promptValue||'A realistic five second cinematic video with natural movement.',duration:5
+   })});
+   const d=await r.json();
+   if(!r.ok||!d.success)throw Error(d.error||'بررسی ناموفق');
+   dryInfo.textContent=(d.readyForSubmission?'✅ ورودی‌های اصلی سازگارند.':'⚠️ ورودی الزامی تکمیل نشده: '+d.missingRequiredFields.join(', '))+
+    ' | هیچ ویدئویی تولید نشد. هزینه و دسترسی حساب هنوز تأیید نشده است.';
+  }catch(e){dryInfo.textContent='❌ '+e.message}
+  finally{dryBtn.disabled=false}
+ };
  const key='aluniverse_studio_draft_v1';let output='',scenes=[],pending=false,pilotId=null,expectedScenes=0,planValid=false;
  const faDigits=t=>String(t).replace(/[۰-۹]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c))).replace(/[٠-٩]/g,c=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(c)));
  const getSeconds=()=>{const m=Number(minuteInput.value),s=Number(secondInput.value);return Number.isInteger(m)&&Number.isInteger(s)&&m>=0&&m<=30&&s>=0&&s<=59?m*60+s:NaN};
