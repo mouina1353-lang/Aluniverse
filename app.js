@@ -98,6 +98,7 @@ function openStudio(){
  make('label','نشانی تصویر پایان (اختیاری)');const endImage=make('input');endImage.type='url';endImage.placeholder='https://.../end.png';
 
  make('p','برای بارگذاری یا انتخاب تصویر، رمز خصوصی گالری را در کادر پایین همین صفحه وارد کنید. لینک‌های انتخابی یک ساعت اعتبار دارند.');
+ let startUploader=null;
  const pickReference=(target,label)=>{
   make('label',label);const file=make('input');file.type='file';file.accept='image/png,image/jpeg,image/webp';
   const upload=make('button','بارگذاری تصویر انتخاب‌شده');upload.type='button';
@@ -111,13 +112,15 @@ function openStudio(){
   file.onchange=()=>{revoke();if(file.files?.[0]){localUrl=URL.createObjectURL(file.files[0]);show(localUrl);info.textContent='پیش‌نمایش محلی؛ برای ثبت، بارگذاری را بزنید.'}};
   preview.onerror=()=>{info.textContent='❌ تصویر باز نشد یا لینک منقضی شده است.';preview.hidden=true;preview.style.display='none'};
 
-  upload.onclick=async()=>{const f=file.files?.[0];if(!f){info.textContent='ابتدا تصویر را انتخاب کنید.';return}
-   if(f.size>8*1024*1024){info.textContent='حداکثر حجم تصویر ۸ مگابایت است.';return}
-   if(!pass.value){info.textContent='رمز خصوصی گالری را پایین صفحه وارد کنید.';return}
+  const doUpload=async()=>{const f=file.files?.[0];if(!f){info.textContent='ابتدا تصویر را انتخاب کنید.';return false}
+   if(f.size>8*1024*1024){info.textContent='حداکثر حجم تصویر ۸ مگابایت است.';return false}
+   if(!pass.value){info.textContent='رمز خصوصی گالری را پایین صفحه وارد کنید.';return false}
    upload.disabled=true;info.textContent='در حال بارگذاری...';
-   try{const r=await fetch('/api/studio/reference-image',{method:'POST',headers:{'Content-Type':f.type,'x-aluniverse-upload-password':pass.value},body:f});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای بارگذاری');target.value=d.url;revoke();show(d.url);info.textContent='✅ تصویر بارگذاری شد؛ لینک یک ساعت اعتبار دارد.'}
-   catch(e){info.textContent='❌ '+e.message}finally{upload.disabled=false}
+   try{const r=await fetch('/api/studio/reference-image',{method:'POST',headers:{'Content-Type':f.type,'x-aluniverse-upload-password':pass.value},body:f});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای بارگذاری');target.value=d.url;revoke();show(d.url);info.textContent='✅ تصویر بارگذاری شد؛ لینک یک ساعت اعتبار دارد.';return true}
+   catch(e){info.textContent='❌ '+e.message;return false}finally{upload.disabled=false}
   };
+  upload.onclick=doUpload;
+  if(target===startImage)startUploader=doUpload;
   gallery.onclick=async()=>{if(!pass.value){info.textContent='رمز خصوصی گالری را پایین صفحه وارد کنید.';return}
    gallery.disabled=true;info.textContent='در حال دریافت گالری...';
    try{const r=await fetch('/api/gallery/list?kind=image&page=0',{headers:{'x-aluniverse-upload-password':pass.value},cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'خطای گالری');
@@ -132,12 +135,18 @@ function openStudio(){
  const checkImages=make('button','بررسی رایگان نشانی تصاویر');checkImages.type='button';const imageResult=make('p','لینک‌ها هنوز بررسی نشده‌اند.');
  checkImages.onclick=async()=>{
  const valid=v=>{try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password&&!!u.hostname}catch{return false}};
+ if(!startImage.value.trim()&&startUploader){imageResult.textContent='در حال ثبت خودکار تصویر شروع...';const ok=await startUploader();if(!ok){imageResult.textContent='❌ تصویر شروع هنوز بارگذاری نشده است؛ پیام زیر تصویر را بررسی کنید.';return}}
  const a=startImage.value.trim(),b=endImage.value.trim();
  if(!valid(a)||b&&!valid(b)){imageResult.textContent='❌ نشانی HTTPS معتبر تصویر لازم است.';return}
  imageResult.textContent='در حال بررسی بازشدن تصاویر...';checkImages.disabled=true;
  try{const check=url=>new Promise((resolve,reject)=>{const img=new Image();const t=setTimeout(()=>{img.src='';reject(Error('زمان بررسی تمام شد'))},12000);img.onload=()=>{clearTimeout(t);resolve(true)};img.onerror=()=>{clearTimeout(t);reject(Error('تصویر باز نشد؛ شاید لینک منقضی شده است'))};img.src=url});await check(a);if(b)await check(b);imageResult.textContent='✅ تصویرها در مرورگر باز می‌شوند؛ دسترسی Kling و هزینه هنوز تأیید نشده است.'}
  catch(e){imageResult.textContent='❌ '+e.message}finally{checkImages.disabled=false}
 };
+ const compareLabel=make('label','مقایسه رایگان مدل‌های نامزد (فقط بررسی مشخصات)');
+ const compareSelect=make('select');
+ [['','انتخاب نامزد'],['kwaivgi/kling-v2.1','Kling 2.1 (تصویر به ویدئو)'],['black-forest-labs/flux-kontext-pro','FLUX Kontext Pro (ویرایش تصویر)'],['black-forest-labs/flux-schnell','FLUX Schnell (موتور تصویر فعلی)']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;compareSelect.append(o)});
+ compareSelect.onchange=()=>{if(compareSelect.value)candidateInput.value=compareSelect.value};
+ const compareNote=make('p','این فهرست رتبه‌بندی کیفیت یا تأیید دسترسی نیست؛ فقط نامزدهای بررسی API هستند. مدل‌های Veo/Runway تا تأیید مسیر دسترسی به Replicate در فهرست نیستند.');compareNote.style.fontSize='12px';
  const checkModel=make('button','🔎 بررسی رایگان مشخصات موتور جایگزین');checkModel.type='button';
  const checkResult=make('p','این بررسی فقط مشخصات فنی را می‌خواند؛ ویدئو تولید نمی‌کند.');checkResult.style.cssText='font-size:13px;white-space:pre-wrap';
  checkModel.onclick=async()=>{checkModel.disabled=true;checkResult.textContent='در حال بررسی بدون هزینه تولید...';try{
