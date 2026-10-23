@@ -435,45 +435,40 @@ function extractHtml(text){
 }
 function renderReadable(target,text){
  target.replaceChildren();
- const lines=String(text||'').replace(/\r\n?/g,'\n').split('\n');
- let list=null,code=null;
+ target.style.cssText+=';font-size:16px;line-height:1.95;direction:rtl;text-align:start;overflow-wrap:break-word;max-width:100%';
+ const lines=String(text||'').replace(/\r\n?/g,'\n').replace(/<br\s*\/?\s*>/gi,'\n').split('\n');
+ let list=null,code=null,paragraph=null,table=null;
  const inline=(node,source)=>{
-  const chunks=source.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  chunks.forEach(c=>{
-   if(c.startsWith('**')&&c.endsWith('**')){const b=document.createElement('strong');b.textContent=c.slice(2,-2);node.append(b)}
-   else if(c.startsWith('`')&&c.endsWith('`')){const k=document.createElement('code');k.textContent=c.slice(1,-1);node.append(k)}
-   else node.append(document.createTextNode(c));
-  });
+  const safe=String(source).replace(/\\(?:times|cdot)/g,' × ').replace(/\\approx/g,' ≈ ').replace(/\\(?:leq|le)/g,' ≤ ').replace(/\\(?:geq|ge)/g,' ≥ ').replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,'($1 ÷ $2)').replace(/\\\[|\\\]|\\\(|\\\)/g,'');
+  for(const chunk of safe.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)){
+   if(chunk.startsWith('**')&&chunk.endsWith('**')){const b=document.createElement('strong');b.textContent=chunk.slice(2,-2);node.append(b)}
+   else if(chunk.startsWith('`')&&chunk.endsWith('`')){const k=document.createElement('code');k.textContent=chunk.slice(1,-1);k.style.direction='auto';node.append(k)}
+   else node.append(document.createTextNode(chunk));
+  }
  };
- for(const raw of lines){
-  const line=raw.trim();
-  if(line.startsWith('```')){if(code){target.append(code);code=null}else{code=document.createElement('pre');code.style.cssText='white-space:pre-wrap;direction:ltr;text-align:left;overflow:auto;background:#f4f2fa;padding:12px;border-radius:10px'}list=null;continue}
+ const finish=()=>{paragraph=null;list=null;table=null};
+ for(const raw of lines){const line=raw.trim();
+  if(line.startsWith('```')){finish();if(code){target.append(code);code=null}else{code=document.createElement('pre');code.style.cssText='white-space:pre-wrap;direction:ltr;text-align:left;overflow:auto;background:#f4f2fa;padding:14px;border-radius:12px;max-width:100%'}continue}
   if(code){code.append(document.createTextNode(raw+'\n'));continue}
-  if(!line){list=null;continue}
-  // Responsive Markdown table, safely rendered as text (never innerHTML).
+  if(!line){finish();continue}
+  if(/^[-*_]{3,}$/.test(line)){finish();target.append(document.createElement('hr'));continue}
   if(line.startsWith('|')&&line.endsWith('|')){
+   paragraph=null;list=null;
    const cells=line.slice(1,-1).split('|').map(x=>x.trim());
    if(cells.every(x=>/^:?-{3,}:?$/.test(x)))continue;
-   let holder=target.lastElementChild;
-   if(!holder||!holder.classList.contains('al-ai-table-scroll')){
-    holder=document.createElement('div');holder.className='al-ai-table-scroll';
-    holder.style.cssText='overflow-x:auto;max-width:100%;margin:12px 0;border:1px solid #ddd;border-radius:10px';
-    const table=document.createElement('table');table.style.cssText='width:100%;min-width:360px;border-collapse:collapse;text-align:start';holder.append(table);target.append(holder);
-   }
-   const tr=document.createElement('tr');
-   for(const value of cells){const td=document.createElement(holder.firstChild.rows.length?'td':'th');td.style.cssText='border:1px solid #ddd;padding:8px;white-space:normal;overflow-wrap:anywhere';inline(td,value);tr.append(td)}
-   holder.firstChild.append(tr);list=null;continue;
+   if(!table){table=document.createElement('div');table.className='al-ai-table-cards';table.style.cssText='display:grid;gap:10px;margin:14px 0;max-width:100%';target.append(table)}
+   const row=document.createElement('div');row.style.cssText='padding:12px 14px;border:1px solid #e3daf4;border-radius:12px;background:#faf8ff;overflow-wrap:anywhere;min-width:0';
+   cells.forEach((v,i)=>{const cell=document.createElement('div');cell.style.cssText='padding:4px 0;line-height:1.9;min-width:0;unicode-bidi:plaintext';if(i){const label=document.createElement('strong');label.textContent=' • ';cell.append(label)}inline(cell,v);row.append(cell)});table.append(row);continue;
   }
-  const heading=line.match(/^(#{1,3})\s+(.+)$/);
-  if(heading){list=null;const h=document.createElement('h'+Math.min(heading[1].length+2,5));inline(h,heading[2]);h.style.margin='18px 0 9px';target.append(h);continue}
-  const bullet=line.match(/^[-*•]\s+(.+)$/);
-  const numbered=line.match(/^(\d+)[.)]\s+(.+)$/);
-  if(bullet||numbered){
-   const tag=numbered?'ol':'ul';
-   if(!list||list.tagName.toLowerCase()!==tag){list=document.createElement(tag);list.style.cssText='padding-inline-start:24px;margin:8px 0 16px';target.append(list)}
-   const li=document.createElement('li');li.style.margin='6px 0';inline(li,(bullet||numbered)[numbered?2:1]);list.append(li);continue
-  }
-  list=null;const para=document.createElement('p');para.style.cssText='line-height:2;margin:0 0 14px;overflow-wrap:anywhere;word-break:break-word';inline(para,line);target.append(para);
+  table=null;
+  const heading=line.match(/^(#{1,4})\s+(.+)$/);
+  if(heading){finish();const level=heading[1].length;const h=document.createElement('h'+Math.min(level+1,5));h.style.cssText=`font-size:${level===1?'1.3':level===2?'1.18':'1.06'}em;line-height:1.65;margin:22px 0 12px;color:#3f278d;font-weight:750`;const icon=document.createElement('span');icon.textContent=['🟣 ','🔹 ','✦ ','▫️ '][level-1];h.append(icon);inline(h,heading[2]);target.append(h);continue}
+  const bullet=line.match(/^[-*•]\s+(.+)$/),numbered=line.match(/^(\d+)[.)]\s+(.+)$/);
+  if(bullet||numbered){paragraph=null;const tag=numbered?'ol':'ul';if(!list||list.tagName.toLowerCase()!==tag){list=document.createElement(tag);list.style.cssText='padding-inline-start:26px;margin:10px 0 18px;line-height:2';target.append(list)}const li=document.createElement('li');li.style.margin='8px 0';inline(li,bullet?bullet[1]:numbered[2]);list.append(li);continue}
+  list=null;
+  if(!paragraph){paragraph=document.createElement('p');paragraph.style.cssText='line-height:2.05;margin:0 0 18px;overflow-wrap:anywhere;word-break:normal;unicode-bidi:plaintext';target.append(paragraph)}
+  else paragraph.append(document.createTextNode(' '));
+  inline(paragraph,line);
  }
  if(code)target.append(code);
 }
